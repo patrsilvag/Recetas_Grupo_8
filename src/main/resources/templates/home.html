@@ -1,0 +1,25 @@
+<!DOCTYPE HTML> 
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"> 
+<head>  
+    <title>Bienvenida - Recetas Saludables</title>  
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /> 
+    <link rel="stylesheet" type="text/css" th:href="@{/style.css}">
+</head> 
+<body> 
+    <h1 th:text="|Bienvenido a ${name}!|"></h1>
+
+    <div sec:authorize="isAuthenticated()" class="authenticated">
+        <h1 th:inline="text">Hola <span th:remove="tag" sec:authentication="name"></span>!</h1>
+        <h2>Has ingresado a la sección privada del recetario.</h2>
+        
+        <form th:action="@{/logout}" method="post" style="text-align: center; margin-top: 20px;">
+            <input type="submit" value="Cerrar Sesión" 
+                   style="background-color: #e74c3c; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;"/>
+        </form>
+    </div>
+
+    <div style="text-align: center; margin-top: 20px;">
+        <p><a th:href="@{/}" style="color: #27ae60; text-decoration: none;">← Volver al Recetario Público</a></p>
+    </div>
+</body> 
+</html>
