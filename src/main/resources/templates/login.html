@@ -31,6 +31,8 @@
     async function ejecutarLogin(event) {
         console.log("Iniciando proceso de login...");
         event.preventDefault(); 
+
+        const backendUrl = /*[[${backendUrl}]]*/ 'http://localhost:8081';
         
         const userVal = document.getElementById('username').value;
         const passVal = document.getElementById('password').value;
@@ -42,7 +44,7 @@
         console.log("Datos capturados:", userVal, passVal);
 
         try {
-            const response = await fetch('http://localhost:8081/login', {
+            const response = await fetch(`${backendUrl}/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'

@@ -1,5 +1,6 @@
 package com.duoc.seguridadcalidad;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller; 
 import org.springframework.ui.Model; 
 import org.springframework.web.bind.annotation.GetMapping; 
@@ -7,6 +8,16 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller 
 public class HomeController { 
+
+     @Value("${backend.url}")
+    private String backendUrl;
+
+    @GetMapping("/login")
+    public String login(Model model) {
+    // Pasamos la URL del backend a la vista para que el JS la use
+    model.addAttribute("backendUrl", backendUrl);
+    return "login";
+}
 
     @GetMapping("/")
     public String root(Model model) {
