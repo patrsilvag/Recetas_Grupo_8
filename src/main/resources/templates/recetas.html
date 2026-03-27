@@ -13,11 +13,11 @@
             if (token) {
                 // SI YA TIENE TOKEN: Va directo al detalle sin pedir login nuevamente
                 console.log("Token detectado. Acceso directo concedido.");
-                window.location.href = "/recetas/detalle?id=" + id;
+                 window.location.href = "/detalle?id=" + id;
             } else {
                 // SI NO TIENE TOKEN: Lo manda a loguearse primero
                 console.log("No hay token. Redirigiendo a autenticación.");
-                window.location.href = "/recetas/login?id=" + id;
+                window.location.href = "/login?id=" + id;
             }
         }
     </script>

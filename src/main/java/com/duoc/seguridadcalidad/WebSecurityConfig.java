@@ -20,27 +20,40 @@ public class WebSecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                // 1. Deshabilitar CSRF para permitir la comunicación fluida entre puertos
-                .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests((requests) -> requests
-                        // 2. AGREGAR "/home" y "/detalle" a permitAll()
-                        // Esto permite que el HTML cargue y que el JS interno valide el Token JWT
-                        .requestMatchers("/", "/buscar", "/login", "/home", "/detalle",
-                                "/css/**", "/js/**", "/images/**", "/**.css")
-                        .permitAll()
+            http
+                            // 🔥 Deshabilitar CSRF (para facilitar pruebas y JWT)
+                            .csrf(csrf -> csrf.disable())
 
-                        // Cualquier otra ruta no especificada requerirá autenticación local
-                        .anyRequest().authenticated())
-                .formLogin((form) -> form
-                        .loginPage("/login")
-                        .defaultSuccessUrl("/home", true)
-                        .permitAll())
-                .logout((logout) -> logout
-                        .logoutSuccessUrl("/")
-                        .permitAll());
+                            .authorizeHttpRequests((requests) -> requests
 
-        return http.build();
+                                            .requestMatchers(
+                                                            "/", // /recetas/
+                                                            "", // /recetas ← 🔥 ESTA ES LA CLAVE
+                                                            "/buscar",
+                                                            "/login",
+                                                            "/css/**",
+                                                            "/js/**",
+                                                            "/images/**",
+                                                            "/**.css")
+                                            .permitAll()
+
+                                            .requestMatchers("/home", "/detalle")
+                                            .authenticated()
+                                            // 🔒 cualquier otra
+                                            .anyRequest().authenticated())
+
+                            // 🔐 LOGIN
+                            .formLogin((form) -> form
+                                            .loginPage("/login")
+                                            .defaultSuccessUrl("/home", true)
+                                            .permitAll())
+
+                            // 🚪 LOGOUT
+                            .logout((logout) -> logout
+                                            .logoutSuccessUrl("/")
+                                            .permitAll());
+
+            return http.build();
     }
 
     

@@ -19,12 +19,11 @@ public class HomeController {
     return "login";
 }
 
-    @GetMapping("/")
-    public String root(Model model) {
-        model.addAttribute("name", "Seguridad y Calidad en el Desarrollo");
-        return "recetas"; // Esta será la página que TODOS pueden ver
+   @GetMapping({ "/", "" })
+    public String root() {
+    return "recetas";
     }
-
+  
     @GetMapping("/home")
     public String home(Model model) {
         model.addAttribute("name", "Seguridad y Calidad en el Desarrollo");
