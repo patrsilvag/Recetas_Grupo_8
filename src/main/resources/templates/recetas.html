@@ -2,140 +2,68 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recetas de Alimentos</title>
+    <title>Recetas Saludables - Grupo 8</title>
     <link rel="stylesheet" th:href="@{/recetas.css}">
-    
+    <style>
+        .banner-comercial { background: #f1c40f; padding: 15px; text-align: center; margin-bottom: 20px; border-radius: 8px; font-weight: bold; }
+        .grid-recetas { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; padding: 20px; }
+        .receta-card { border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background: white; }
+        .receta-header { background: #27ae60; color: white; padding: 10px; }
+        .contenido-privado { padding: 15px; background: #f9f9f9; text-align: center; }
+        .btn-ver { color: #2980b9; text-decoration: underline; cursor: pointer; }
+    </style>
     <script>
         function validarYRedirigir(id) {
             const token = localStorage.getItem('token');
-            
             if (token) {
-                // SI YA TIENE TOKEN: Va directo al detalle sin pedir login nuevamente
-                console.log("Token detectado. Acceso directo concedido.");
-                 window.location.href = "/detalle?id=" + id;
+                window.location.href = "/recetas/detalle?id=" + id;
             } else {
-                // SI NO TIENE TOKEN: Lo manda a loguearse primero
-                console.log("No hay token. Redirigiendo a autenticación.");
-                window.location.href = "/login?id=" + id;
+                window.location.href = "/recetas/login?id=" + id;
             }
         }
     </script>
 </head>
 <body>
-    <header>
-        <nav>
-            <h1>🍎 Recetas Saludables</h1>
-            <a th:href="@{/buscar}" class="btn-buscar">Ir al Buscador Público</a>
-            <a th:href="@{/login}">Iniciar Sesión</a>
-        </nav>
+    <header style="background: #2c3e50; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center;">
+        <h1>🍎 Recetas Saludables - Grupo 8</h1>
+        <div>
+            <a th:href="@{/buscar}" style="color:white; margin-right: 15px;">Buscador Público</a>
+            <a th:href="@{/login}" style="background:#e74c3c; color:white; padding:8px 15px; border-radius:4px; text-decoration:none;">Iniciar Sesión</a>
+        </div>
     </header>
 
-    <div class="ads-banner" style="display: flex; justify-content: space-around; background: #fdf6e3; padding: 10px; border-bottom: 1px solid #ddd; font-size: 0.9em;">
-        <div>🚀 <strong>NutriMax:</strong> Suplementos al 20% desc.</div>
-        <div>🌿 <strong>EcoFeria:</strong> Frutas orgánicas a domicilio.</div>
-        <div>🥤 <strong>Smoothie King:</strong> ¡Prueba el nuevo Mix Verde!</div>
-    </div>
-
-    <div class="banner-frutera">
-        <h2>🥬 La Frutería del Bienestar 🥕</h2>
-        <p>Descubre recetas deliciosas hechas con frutas y verduras frescas</p>
-        <p class="destacado">✓ Ingredientes 100% Naturales | ✓ Recetas Saludables | ✓ Fácil de Preparar</p>
-    </div>
-
     <div class="container">
-        <section class="introduccion">
-            <h2>Bienvenido a Nuestro Recetario</h2>
-            <p>En nuestro recetario encontrarás una amplia variedad de recetas saludables...</p>
-        </section>
+        <div class="banner-comercial">
+            📢 ¡Aviso Comercial! 20% de descuento en ingredientes orgánicos con el código DUOC2026.
+        </div>
 
-        <section class="recetas-grid">
+        <h2 style="padding: 0 20px;">Recetas Populares (Acceso Público)</h2>
+        
+        <section class="grid-recetas">
             <article class="receta-card">
-                <div class="receta-header"><h3>Ensalada de Frutas Tropicales</h3></div>
-                <div class="receta-body">
-                    <div class="receta-info"><span>⏱️ 15 min</span> | <span>👥 4 porc.</span></div>
-                    <div class="contenido-privado" style="background: #f9f9f9; padding: 10px; margin: 10px 0;">
-                        <p style="color: #666; font-size: 0.9em;">🔒 Inicia sesión para ver detalle.</p>
-                        <a href="javascript:void(0)" onclick="validarYRedirigir(1)" style="color: #27ae60; font-weight: bold; text-decoration: none;">Ver Receta Completa →</a>
-                    </div>
-                    <span class="dificultad facil">Fácil</span>
+                <div class="receta-header"><h3>Ensalada Tropical</h3></div>
+                <div class="contenido-privado">
+                    <p>⏱️ 15 min | 🔒 Contenido Protegido</p>
+                    <a href="javascript:void(0)" onclick="validarYRedirigir(1)" class="btn-ver">Ver Receta Completa →</a>
                 </div>
             </article>
 
             <article class="receta-card">
-                <div class="receta-header"><h3>Smoothie Verde Energético</h3></div>
-                <div class="receta-body">
-                    <div class="receta-info"><span>⏱️ 10 min</span> | <span>👥 2 porc.</span></div>
-                    <div class="contenido-privado" style="background: #f9f9f9; padding: 10px; margin: 10px 0;">
-                        <p style="color: #666; font-size: 0.9em;">🔒 Contenido protegido JWT.</p>
-                        <a href="javascript:void(0)" onclick="validarYRedirigir(2)" style="color: #27ae60; font-weight: bold; text-decoration: none;">Ver Receta Completa →</a>
-                    </div>
-                    <span class="dificultad facil">Fácil</span>
+                <div class="receta-header"><h3>Smoothie Verde</h3></div>
+                <div class="contenido-privado">
+                    <p>⏱️ 10 min | 🔒 Contenido Protegido</p>
+                    <a href="javascript:void(0)" onclick="validarYRedirigir(2)" class="btn-ver">Ver Receta Completa →</a>
                 </div>
             </article>
 
             <article class="receta-card">
-                <div class="receta-header"><h3>Sopa de Verduras Colorida</h3></div>
-                <div class="receta-body">
-                    <div class="receta-info"><span>⏱️ 30 min</span> | <span>👥 6 porc.</span></div>
-                    <div class="contenido-privado" style="background: #f9f9f9; padding: 10px; margin: 10px 0;">
-                        <p style="color: #666; font-size: 0.9em;">🔒 Requiere autenticación.</p>
-                        <a href="javascript:void(0)" onclick="validarYRedirigir(3)" style="color: #27ae60; font-weight: bold; text-decoration: none;">Ver Receta Completa →</a>
-                    </div>
-                    <span class="dificultad media">Medio</span>
+                <div class="receta-header"><h3>Sopa Colorida</h3></div>
+                <div class="contenido-privado">
+                    <p>⏱️ 30 min | 🔒 Contenido Protegido</p>
+                    <a href="javascript:void(0)" onclick="validarYRedirigir(3)" class="btn-ver">Ver Receta Completa →</a>
                 </div>
             </article>
-
-            <article class="receta-card">
-                <div class="receta-header"><h3>Tarta de Frutos Rojos</h3></div>
-                <div class="receta-body">
-                    <div class="receta-info"><span>⏱️ 45 min</span> | <span>👥 8 porc.</span></div>
-                    <div class="contenido-privado" style="background: #f9f9f9; padding: 10px; margin: 10px 0;">
-                        <p style="color: #666; font-size: 0.9em;">🔒 Solo para miembros.</p>
-                        <a href="javascript:void(0)" onclick="validarYRedirigir(4)" style="color: #27ae60; font-weight: bold; text-decoration: none;">Ver Receta Completa →</a>
-                    </div>
-                    <span class="dificultad media">Medio</span>
-                </div>
-            </article>
-
-            <article class="receta-card">
-                <div class="receta-header"><h3>Ensalada de Remolacha y Queso</h3></div>
-                <div class="receta-body">
-                    <div class="receta-info"><span>⏱️ 20 min</span> | <span>👥 4 porc.</span></div>
-                    <div class="contenido-privado" style="background: #f9f9f9; padding: 10px; margin: 10px 0;">
-                        <p style="color: #666; font-size: 0.9em;">🔒 Acceso privado.</p>
-                        <a href="javascript:void(0)" onclick="validarYRedirigir(5)" style="color: #27ae60; font-weight: bold; text-decoration: none;">Ver Receta Completa →</a>
-                    </div>
-                    <span class="dificultad media">Medio</span>
-                </div>
-            </article>
-
-            <article class="receta-card">
-                <div class="receta-header"><h3>Pasta Integral con Vegetales</h3></div>
-                <div class="receta-body">
-                    <div class="receta-info"><span>⏱️ 25 min</span> | <span>👥 4 porc.</span></div>
-                    <div class="contenido-privado" style="background: #f9f9f9; padding: 10px; margin: 10px 0;">
-                        <p style="color: #666; font-size: 0.9em;">🔒 Requiere Token JWT.</p>
-                        <a href="javascript:void(0)" onclick="validarYRedirigir(6)" style="color: #27ae60; font-weight: bold; text-decoration: none;">Ver Receta Completa →</a>
-                    </div>
-                    <span class="dificultad facil">Fácil</span>
-                </div>
-            </article>
-        </section>
-
-        <section class="beneficios">
-            <h2>Beneficios de Comer Frutas y Verduras</h2>
-            <div class="beneficios-list">
-                <div class="beneficio-item">
-                    <h4>💪 Fortalece el Cuerpo</h4>
-                    <p>Las frutas y verduras proporcionan vitaminas y minerales esenciales...</p>
-                </div>
-                </div>
         </section>
     </div>
-
-    <footer>
-        <p>&copy; 2026 La Frutería del Bienestar - Recetas Saludables</p>
-    </footer>
 </body>
 </html>

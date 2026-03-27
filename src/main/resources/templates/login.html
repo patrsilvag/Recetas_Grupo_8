@@ -1,89 +1,66 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org">
-    <head>
-        <title>Ejemplo Spring Security Login </title>
-        <link rel="stylesheet" type="text/css" th:href="@{/login.css}">
-    </head>
-    <body>
-        <div th:if="${param.error}">
-            Invalid username and password.
-        </div>
-        <div th:if="${param.logout}">
-            You have been logged out.
-        </div>
-    <form onsubmit="ejecutarLogin(event)">
-        <div>
-            <label> User Name : 
-                <input type="text" id="username" name="username" required/> 
-            </label>
-        </div>
-        <div>
-            <label> Password: 
-                <input type="password" id="password" name="password" required/> 
-            </label>
-        </div>
-        <div>
-            <input type="submit" value="Sign In"/>
-        </div>
-    </form>
-    
-   <script th:inline="javascript">
-    async function ejecutarLogin(event) {
-        console.log("Iniciando proceso de login...");
-        event.preventDefault(); 
+<head>
+    <title>Acceso Seguro - Grupo 8</title>
+    <link rel="stylesheet" type="text/css" th:href="@{/login.css}">
+</head>
+<body>
+    <div class="login-container">
+        <h2>🔒 Autenticación de Auditoría</h2>
+        <form onsubmit="ejecutarLogin(event)">
+            <div>
+                <label>Usuario: <input type="text" id="username" name="username" required/></label>
+            </div>
+            <div>
+                <label>Password: <input type="password" id="password" name="password" required/></label>
+            </div>
+            <div>
+                <input type="submit" value="Sign In"/>
+            </div>
+        </form>
+    </div>
 
-        const backendUrl = /*[[${backendUrl}]]*/ 'http://localhost:8081';
-        
-        const userVal = document.getElementById('username').value;
-        const passVal = document.getElementById('password').value;
+    <script th:inline="javascript">
+        async function ejecutarLogin(event) {
+            event.preventDefault();
+            console.log("Iniciando proceso de login...");
 
-        const params = new URLSearchParams();
-        params.append('user', userVal);      
-        params.append('password', passVal);
+            // Usamos localhost para que el navegador de ZAP encuentre el backend
+            const backendUrl = 'http://localhost:8081';
+            const userVal = document.getElementById('username').value;
+            const passVal = document.getElementById('password').value;
 
-        console.log("Datos capturados:", userVal, passVal);
+            const params = new URLSearchParams();
+            params.append('user', userVal);
+            params.append('password', passVal);
 
-        try {
-            const response = await fetch(`${backendUrl}/login`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: params
-            });
-            
-            console.log("Respuesta recibida:", response.status);
-          
-            if (response.status === 200) {
-                const token = await response.text(); 
-                console.log("Token capturado:", token);
-                
-                // 1. Guardamos el token en LocalStorage
-                localStorage.setItem('token', token);
-                
-                // 2. CAPTURAMOS EL ID DE LA URL (Viene desde recetas.html?id=X)
-                const urlParams = new URLSearchParams(window.location.search);
-                const recetaId = urlParams.get('id') || '1'; // Si no hay ID, por defecto la 1
+            try {
+                // El debugger permite ver la trama en ZAP antes de que se envíe
+                debugger; 
+                const response = await fetch(`${backendUrl}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: params
+                });
 
-               // alert("¡Login Exitoso! Redirigiendo a los detalles de la receta...");
-                
-                // 3. REDIRECCIÓN DINÁMICA: Enviamos al usuario a detalle con su ID
-                console.log("Navegando a /recetas/detalle con ID:", recetaId);
-            
-                window.location.replace("/recetas/detalle?id=" + recetaId);
-                
-            } else {
-                console.error("Error en autenticación. Status:", response.status);
-                alert("Credenciales incorrectas en el servidor 8081");
+                if (response.status === 200) {
+                    const token = await response.text();
+                    localStorage.setItem('token', token);
+                    
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const recetaId = urlParams.get('id') || '1';
+
+                    console.log("Login exitoso. Redirigiendo a /recetas/detalle");
+                    // CORRECCIÓN DE RUTA: Incluye el context-path /recetas
+                    window.location.replace("/recetas/detalle?id=" + recetaId);
+                } else {
+                    alert("Credenciales incorrectas en el servidor 8081");
+                }
+            } catch (error) {
+                console.error("Error de conexión:", error);
+                alert("No se pudo contactar al backend en el puerto 8081");
             }
-         
-        } catch (error) {
-            console.error("No se pudo contactar al backend 8081:", error);
-            alert("El Backend (8081) está caído o hay un error de CORS.");
         }
-    }
-</script>
-    
-    </body>
+    </script>
+</body>
 </html>
-

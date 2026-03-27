@@ -78,7 +78,7 @@
             document.getElementById('res-dificultad').innerText = "Dificultad: " + data.dificultad;
             document.getElementById('res-tiempo').innerText = data.tiempo;
             document.getElementById('res-pasos').innerText = data.pasos;
-            
+            document.getElementById('res-img').src = data.img;
             const lista = document.getElementById('res-ingredientes');
             lista.innerHTML = "";
             data.ingredientes.forEach(ing => {

@@ -28,9 +28,9 @@ public class WebSecurityConfig {
 
                                             .requestMatchers(
                                                             "/", // /recetas/
-                                                            "", // /recetas ← 🔥 ESTA ES LA CLAVE
                                                             "/buscar",
                                                             "/login",
+                                                            "/detalle",
                                                             "/css/**",
                                                             "/js/**",
                                                             "/images/**",
