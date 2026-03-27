@@ -4,36 +4,118 @@
     <meta charset="UTF-8">
     <title>Detalle de Receta - Privado</title>
     <link rel="stylesheet" th:href="@{/recetas.css}">
+    <script>
+        // 1. PROTECCIÓN: Verificar Token JWT antes de mostrar nada
+        document.addEventListener("DOMContentLoaded", function() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert("⚠️ Acceso denegado. Debes iniciar sesión.");
+                window.location.href = "/recetas/login";
+                return;
+            }
+
+            // 2. LÓGICA DINÁMICA: Leer el ID de la URL
+            const params = new URLSearchParams(window.location.search);
+            const recetaId = params.get('id');
+            cargarDatosReceta(recetaId);
+        });
+
+        // Base de datos estática para la entrega
+        const recetasData = {
+            "1": {
+                titulo: "Ensalada de Frutas Tropicales",
+                dificultad: "Fácil",
+                tiempo: "15 min",
+                ingredientes: ["1 piña", "2 mangos", "1 papaya", "200g fresas", "Limón", "Menta"],
+                pasos: "Mezcla las frutas, añade limón y menta. Refrigera 30 min.",
+                img: "/recetas/images/ensalada.jpg"
+            },
+            "2": {
+                titulo: "Smoothie Verde Energético",
+                dificultad: "Fácil",
+                tiempo: "10 min",
+                ingredientes: ["2 tazas espinaca", "1 plátano", "1 manzana", "Leche almendra", "Yogur", "Miel"],
+                pasos: "Licúa todos los ingredientes hasta que sea homogéneo. Sirve frío.",
+                img: "/recetas/images/smoothie.jpg"
+            },
+            "3": {
+                titulo: "Sopa de Verduras Colorida",
+                dificultad: "Media",
+                tiempo: "30 min",
+                ingredientes: ["2 zanahorias", "3 papas", "1 brócoli", "1 cebolla", "2 tomates", "Caldo"],
+                pasos: "Hierve el caldo, cocina vegetales 15 min, agrega brócoli y cocina 10 min más.",
+                img: "/recetas/images/sopa.jpg"
+            },
+            "4": {
+                titulo: "Tarta de Frutos Rojos",
+                dificultad: "Media",
+                tiempo: "45 min",
+                ingredientes: ["200g fresas", "150g arándanos", "150g frambuesas", "Base tarta", "Crema", "Miel"],
+                pasos: "Bate crema con miel, pon sobre la base y decora con los frutos rojos.",
+                img: "/recetas/images/tarta.jpg"
+            },
+            "5": {
+                titulo: "Ensalada de Remolacha y Queso",
+                dificultad: "Media",
+                tiempo: "20 min",
+                ingredientes: ["3 remolachas", "Lechuga", "200g queso cabra", "100g nueces", "Aceite oliva"],
+                pasos: "Cuece remolachas, corta en cubos, mezcla con lechuga, queso y nueces.",
+                img: "/recetas/images/remolacha.jpg"
+            },
+            "6": {
+                titulo: "Pasta Integral con Vegetales",
+                dificultad: "Fácil",
+                tiempo: "25 min",
+                ingredientes: ["400g pasta", "2 calabacines", "1 pimiento", "200g champiñones", "Ajo", "Cherry"],
+                pasos: "Cuece la pasta. Saltea vegetales con ajo y mezcla todo al final.",
+                img: "/recetas/images/pasta.jpg"
+            }
+        };
+
+        function cargarDatosReceta(id) {
+            const data = recetasData[id] || recetasData["1"]; // Por defecto la 1
+            document.getElementById('res-titulo').innerText = data.titulo;
+            document.getElementById('res-dificultad').innerText = "Dificultad: " + data.dificultad;
+            document.getElementById('res-tiempo').innerText = data.tiempo;
+            document.getElementById('res-pasos').innerText = data.pasos;
+            
+            const lista = document.getElementById('res-ingredientes');
+            lista.innerHTML = "";
+            data.ingredientes.forEach(ing => {
+                let li = document.createElement('li');
+                li.innerText = ing;
+                lista.appendChild(li);
+            });
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = "/recetas/";
+        }
+    </script>
 </head>
 <body>
     <header>
         <nav>
-            <h1>📖 Detalle de Receta</h1>
-            <a th:href="@{/home}">Cerrar Sesión / Volver</a>
+            <h1>📖 Información Privada</h1>
+            <button onclick="logout()" style="background:#e74c3c; color:white; border:none; padding:8px; border-radius:4px; cursor:pointer;">Cerrar Sesión</button>
         </nav>
     </header>
 
-    <div class="container" style="background: white; padding: 40px; border-radius: 8px; margin-top: 20px;">
-        <h2 style="color: #27ae60;">Ensalada Tropical Premium</h2>
-        <span class="dificultad facil">Dificultad: Fácil</span>
-        <p><strong>Tiempo de cocción:</strong> 15 minutos</p>
+    <div class="container" style="background: white; padding: 40px; border-radius: 8px; margin-top: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <h2 id="res-titulo" style="color: #27ae60;">Cargando...</h2>
+        <span id="res-dificultad" class="dificultad">Dificultad</span>
+        <p><strong>Tiempo:</strong> <span id="res-tiempo"></span></p>
         
         <div style="margin: 20px 0;">
-            <img th:src="@{/images/ensalada.jpg}" alt="Foto de la receta" style="width: 100%; max-width: 500px; border-radius: 8px;">
+            <img id="res-img" th:src="@{/images/ensalada.jpg}" alt="Foto" style="width: 100%; max-width: 400px; border-radius: 8px; border: 4px solid #f0f0f0;">
         </div>
 
-        <h3>Ingredientes:</h3>
-        <ul>
-            <li>Lechuga fresca</li>
-            <li>Mango en cubos</li>
-            <li>Nueces picadas</li>
-            <li>Aderezo de miel y mostaza</li>
-        </ul>
+        <h3>Ingredientes (Acceso con JWT):</h3>
+        <ul id="res-ingredientes"></ul>
 
         <h3>Instrucciones de preparación:</h3>
-        <p>1. Lavar bien todos los vegetales.</p>
-        <p>2. Mezclar el mango con la lechuga en un bowl grande.</p>
-        <p>3. Esparcir las nueces y bañar con el aderezo.</p>
+        <p id="res-pasos"></p>
     </div>
 </body>
 </html>

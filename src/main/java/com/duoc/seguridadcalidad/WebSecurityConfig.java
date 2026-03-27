@@ -21,20 +21,23 @@ public class WebSecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                        .authorizeHttpRequests((requests) -> requests
-                                        // ELIMINAMOS "/home" de esta línea para que no sea pública
-                                        .requestMatchers("/", "/buscar", "/login", "/css/**", "/js/**", "/images/**",
-                                                        "/**.css")
-                                        .permitAll()
+                // 1. Deshabilitar CSRF para permitir la comunicación fluida entre puertos
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests((requests) -> requests
+                        // 2. AGREGAR "/home" y "/detalle" a permitAll()
+                        // Esto permite que el HTML cargue y que el JS interno valide el Token JWT
+                        .requestMatchers("/", "/buscar", "/login", "/home", "/detalle",
+                                "/css/**", "/js/**", "/images/**", "/**.css")
+                        .permitAll()
 
-                                        // Al no estar arriba, esta línea atrapará a "/home" y exigirá login
-                                        .anyRequest().authenticated())
+                        // Cualquier otra ruta no especificada requerirá autenticación local
+                        .anyRequest().authenticated())
                 .formLogin((form) -> form
-                        .loginPage("/login") // Nuestra página de login personalizada [cite: 747]
-                        .defaultSuccessUrl("/home", true) // Redirige al inicio tras loguearse
+                        .loginPage("/login")
+                        .defaultSuccessUrl("/home", true)
                         .permitAll())
                 .logout((logout) -> logout
-                                        .logoutSuccessUrl("/") // Redirige a la raíz pública tras salir
+                        .logoutSuccessUrl("/")
                         .permitAll());
 
         return http.build();

@@ -11,11 +11,77 @@
         <div th:if="${param.logout}">
             You have been logged out.
         </div>
-        <form th:action="@{/login}" method="post">
-            <div><label> User Name : <input type="text" name="username"/> </label></div>
-            <div><label> Password: <input type="password" name="password"/> </label></div>
-            <div><input type="submit" value="Sign In"/></div>
-        </form>
+    <form onsubmit="ejecutarLogin(event)">
+        <div>
+            <label> User Name : 
+                <input type="text" id="username" name="username" required/> 
+            </label>
+        </div>
+        <div>
+            <label> Password: 
+                <input type="password" id="password" name="password" required/> 
+            </label>
+        </div>
+        <div>
+            <input type="submit" value="Sign In"/>
+        </div>
+    </form>
+    
+   <script th:inline="javascript">
+    async function ejecutarLogin(event) {
+        console.log("Iniciando proceso de login...");
+        event.preventDefault(); 
+        
+        const userVal = document.getElementById('username').value;
+        const passVal = document.getElementById('password').value;
+
+        const params = new URLSearchParams();
+        params.append('user', userVal);      
+        params.append('password', passVal);
+
+        console.log("Datos capturados:", userVal, passVal);
+
+        try {
+            const response = await fetch('http://localhost:8081/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: params
+            });
+            
+            console.log("Respuesta recibida:", response.status);
+          
+            if (response.status === 200) {
+                const token = await response.text(); 
+                console.log("Token capturado:", token);
+                
+                // 1. Guardamos el token en LocalStorage
+                localStorage.setItem('token', token);
+                
+                // 2. CAPTURAMOS EL ID DE LA URL (Viene desde recetas.html?id=X)
+                const urlParams = new URLSearchParams(window.location.search);
+                const recetaId = urlParams.get('id') || '1'; // Si no hay ID, por defecto la 1
+
+               // alert("¡Login Exitoso! Redirigiendo a los detalles de la receta...");
+                
+                // 3. REDIRECCIÓN DINÁMICA: Enviamos al usuario a detalle con su ID
+                console.log("Navegando a /recetas/detalle con ID:", recetaId);
+            
+                window.location.replace("/recetas/detalle?id=" + recetaId);
+                
+            } else {
+                console.error("Error en autenticación. Status:", response.status);
+                alert("Credenciales incorrectas en el servidor 8081");
+            }
+         
+        } catch (error) {
+            console.error("No se pudo contactar al backend 8081:", error);
+            alert("El Backend (8081) está caído o hay un error de CORS.");
+        }
+    }
+</script>
+    
     </body>
 </html>
 

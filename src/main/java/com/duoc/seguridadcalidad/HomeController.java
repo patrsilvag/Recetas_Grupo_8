@@ -31,9 +31,10 @@ public class HomeController {
             return "buscar";
         }
 
-    @GetMapping("/detalle")
-        public String detalle(Model model) {
-            return "detalle"; // Busca detalle.html
+        @GetMapping("/detalle")
+        public String detalle(@RequestParam(name = "id", required = false) String id, Model model) {
+            // Esto debe devolver el nombre exacto de tu archivo HTML sin la extensión
+            return "detalle";
         }
 }
 
