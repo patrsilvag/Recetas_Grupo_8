@@ -28,7 +28,15 @@ public class WebSecurityConfig {
                                         // A05:2021 - Activa 'nosniff' para evitar MIME-sniffing (corrige alerta 10021)
                                         .contentTypeOptions(withDefaults()) 
                                         // Mantiene la protección CSP que configuramos antes
-                                        .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;"))
+                                            .contentSecurityPolicy(csp -> csp.policyDirectives(
+                                                            "default-src 'self'; " +
+                                                                            "script-src 'self' 'unsafe-inline'; " +
+                                                                            "style-src 'self' 'unsafe-inline'; " +
+                                                                            "img-src 'self' data:; " +
+                                                                            "connect-src 'self' http://localhost:8081;" // <---
+                                                                                                                        // AGREGAR
+                                                                                                                        // ESTO
+                                            ))
                                         )
                             .authorizeHttpRequests((requests) -> requests
 
