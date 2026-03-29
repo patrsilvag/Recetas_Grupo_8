@@ -23,7 +23,12 @@ public class WebSecurityConfig {
             http
                             // 🔥 Deshabilitar CSRF (para facilitar pruebas y JWT)
                             .csrf(csrf -> csrf.disable())
-
+                                headers(headers -> headers
+                                        // A05:2021 - Activa 'nosniff' para evitar MIME-sniffing (corrige alerta 10021)
+                                        .contentTypeOptions(withDefaults()) 
+                                        // Mantiene la protección CSP que configuramos antes
+                                        .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;"))
+                                        )
                             .authorizeHttpRequests((requests) -> requests
 
                                             .requestMatchers(
