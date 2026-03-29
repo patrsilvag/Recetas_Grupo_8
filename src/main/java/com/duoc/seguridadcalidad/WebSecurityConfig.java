@@ -13,6 +13,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.context.annotation.Description;
+import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 @EnableWebSecurity
@@ -23,7 +24,7 @@ public class WebSecurityConfig {
             http
                             // 🔥 Deshabilitar CSRF (para facilitar pruebas y JWT)
                             .csrf(csrf -> csrf.disable())
-                                headers(headers -> headers
+                                .headers(headers -> headers
                                         // A05:2021 - Activa 'nosniff' para evitar MIME-sniffing (corrige alerta 10021)
                                         .contentTypeOptions(withDefaults()) 
                                         // Mantiene la protección CSP que configuramos antes
