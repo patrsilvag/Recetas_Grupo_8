@@ -46,5 +46,21 @@ public class HomeController {
             // Esto debe devolver el nombre exacto de tu archivo HTML sin la extensión
             return "detalle";
         }
+
+        // NUEVA RUTA PARA LA VISTA DE REGISTRO PRIVADO
+        @GetMapping("/registro")
+        public String registroPrivado(Model model) {
+            // Muestra la vista registro.html
+            return "registro"; 
+        }
+
+        // DE PASO, DEJAMOS LISTA LA RUTA PARA PUBLICAR RECETAS (Rúbrica Semana 4)
+        @GetMapping("/crear-receta")
+        public String crearReceta(Model model) {
+            return "crear-receta";
+        }
+
+        
+
 }
 

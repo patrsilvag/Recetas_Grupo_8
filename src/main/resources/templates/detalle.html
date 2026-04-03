@@ -2,129 +2,139 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Detalle de Receta - Privado</title>
+    <title>Detalle de Receta - Acceso Seguro</title>
     <link rel="stylesheet" th:href="@{/recetas.css}">
     <script>
-        // 1. PROTECCIÓN: Verificar Token JWT antes de mostrar nada
+        // 1. PROTECCIÓN Y CARGA: Verificar Token JWT y consumir API del Backend
         document.addEventListener("DOMContentLoaded", function() {
             const token = localStorage.getItem('token');
+            
+            // Si no hay token, redirigir al login
             if (!token) {
-                alert("⚠️ Acceso denegado. Debes iniciar sesión.");
+                alert("⚠️ Acceso denegado. Debes iniciar sesión para ver los detalles.");
                 window.location.href = "/recetas/login";
                 return;
             }
 
-            // 2. LÓGICA DINÁMICA: Leer el ID de la URL
+            // 2. LÓGICA DINÁMICA: Leer el ID de la URL (ej: detalle?id=10)
             const params = new URLSearchParams(window.location.search);
             const recetaId = params.get('id');
-            cargarDatosReceta(recetaId);
+            
+            if (recetaId) {
+                cargarDatosDesdeBackend(recetaId, token);
+            } else {
+                document.getElementById('res-titulo').textContent = "ID de receta no especificado";
+            }
         });
 
-        // Base de datos estática para la entrega
-        const recetasData = {
-            "1": {
-                titulo: "Ensalada de Frutas Tropicales",
-                dificultad: "Fácil",
-                tiempo: "15 min",
-                ingredientes: ["1 piña", "2 mangos", "1 papaya", "200g fresas", "Limón", "Menta"],
-                pasos: "Mezcla las frutas, añade limón y menta. Refrigera 30 min.",
-                img: "/recetas/images/ensalada.jpg"
-            },
-            "2": {
-                titulo: "Smoothie Verde Energético",
-                dificultad: "Fácil",
-                tiempo: "10 min",
-                ingredientes: ["2 tazas espinaca", "1 plátano", "1 manzana", "Leche almendra", "Yogur", "Miel"],
-                pasos: "Licúa todos los ingredientes hasta que sea homogéneo. Sirve frío.",
-                img: "/recetas/images/smoothie.jpg"
-            },
-            "3": {
-                titulo: "Sopa de Verduras Colorida",
-                dificultad: "Media",
-                tiempo: "30 min",
-                ingredientes: ["2 zanahorias", "3 papas", "1 brócoli", "1 cebolla", "2 tomates", "Caldo"],
-                pasos: "Hierve el caldo, cocina vegetales 15 min, agrega brócoli y cocina 10 min más.",
-                img: "/recetas/images/sopa.jpg"
-            },
-            "4": {
-                titulo: "Tarta de Frutos Rojos",
-                dificultad: "Media",
-                tiempo: "45 min",
-                ingredientes: ["200g fresas", "150g arándanos", "150g frambuesas", "Base tarta", "Crema", "Miel"],
-                pasos: "Bate crema con miel, pon sobre la base y decora con los frutos rojos.",
-                img: "/recetas/images/tarta.jpg"
-            },
-            "5": {
-                titulo: "Ensalada de Remolacha y Queso",
-                dificultad: "Media",
-                tiempo: "20 min",
-                ingredientes: ["3 remolachas", "Lechuga", "200g queso cabra", "100g nueces", "Aceite oliva"],
-                pasos: "Cuece remolachas, corta en cubos, mezcla con lechuga, queso y nueces.",
-                img: "/recetas/images/remolacha.jpg"
-            },
-            "6": {
-                titulo: "Pasta Integral con Vegetales",
-                dificultad: "Fácil",
-                tiempo: "25 min",
-                ingredientes: ["400g pasta", "2 calabacines", "1 pimiento", "200g champiñones", "Ajo", "Cherry"],
-                pasos: "Cuece la pasta. Saltea vegetales con ajo y mezcla todo al final.",
-                img: "/recetas/images/pasta.jpg"
+        // 3. FUNCIÓN AJAX: Consume el puerto 8081 de Spring Boot
+        async function cargarDatosDesdeBackend(id, token) {
+            try {
+                const response = await fetch(`http://localhost:8081/recipes/private/${id}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': token, // Enviamos el JWT para pasar el filtro de seguridad
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const receta = await response.json();
+                    
+                    // Inyección segura de datos en el DOM
+                    document.getElementById('res-titulo').textContent = receta.name;
+                    document.getElementById('res-dificultad').textContent = "Dificultad: " + receta.difficulty;
+                    document.getElementById('res-tiempo').textContent = receta.cookTimeMinutes + " min";
+                    document.getElementById('res-pasos').textContent = receta.instructions;
+                    document.getElementById('res-origen').textContent = receta.cuisineType + " | " + receta.countryOfOrigin;
+
+                    // Renderizar lista de ingredientes dinámicamente
+                    const lista = document.getElementById('res-ingredientes');
+                    lista.innerHTML = ""; // Limpiar mensaje de carga
+                    receta.ingredients.forEach(ing => {
+                        let li = document.createElement('li');
+                        li.textContent = ing; // Uso de textContent por seguridad (XSS)
+                        lista.appendChild(li);
+                    });
+
+                    // Validamos que la lista 'photos' exista y tenga al menos un elemento
+                // if (receta.photos && receta.photos.length > 0) {
+                //     // Tomamos la primera foto de la lista [0]
+                //     const rutaFoto = receta.photos[0];
+                    
+                //     // Verificamos si la ruta ya trae el / al principio
+                //     document.getElementById('res-img').src = rutaFoto.startsWith('/') ? rutaFoto : '/' + rutaFoto;
+                    
+                //     console.log("Cargando foto principal: " + rutaFoto);
+                // } else {
+                //     // Imagen por defecto si no hay fotos en la BD
+                //     document.getElementById('res-img').src = "/images/default-recipe.jpg";
+                // }
+
+                } else if (response.status === 403 || response.status === 401) {
+                    alert("🚫 Sesión expirada o sin permisos.");
+                    logout();
+                } else {
+                    document.getElementById('res-titulo').textContent = "Error: Receta no encontrada en la base de datos";
+                }
+            } catch (error) {
+                console.error("Error de conexión:", error);
+                document.getElementById('res-titulo').textContent = "Error al conectar con el servidor 8081";
             }
-        };
-
-        function cargarDatosReceta(id) {
-            const data = recetasData[id] || recetasData["1"]; // Por defecto la 1
-            // document.getElementById('res-titulo').innerText = data.titulo;
-            // document.getElementById('res-dificultad').innerText = "Dificultad: " + data.dificultad;
-            // document.getElementById('res-tiempo').innerText = data.tiempo;
-            // document.getElementById('res-pasos').innerText = data.pasos;
-            // document.getElementById('res-img').src = data.img;
-
-        // CAMBIO VITAL: textContent neutraliza cualquier script inyectado
-            document.getElementById('res-titulo').textContent = data.titulo;
-            document.getElementById('res-dificultad').textContent = "Dificultad: " + data.dificultad;
-            document.getElementById('res-tiempo').textContent = data.tiempo;
-            document.getElementById('res-pasos').textContent = data.pasos;
-            document.getElementById('res-img').src = data.img;
-
-
-            const lista = document.getElementById('res-ingredientes');
-            lista.innerHTML = "";
-            data.ingredientes.forEach(ing => {
-                let li = document.createElement('li');
-                li.innerText = ing;
-                lista.appendChild(li);
-            });
         }
 
         function logout() {
             localStorage.removeItem('token');
-            window.location.href = "/recetas/";
+            window.location.href = "/recetas/login";
         }
     </script>
 </head>
 <body>
-    <header>
-        <nav>
-            <h1>📖 Información Privada</h1>
-            <button onclick="logout()" style="background:#e74c3c; color:white; border:none; padding:8px; border-radius:4px; cursor:pointer;">Cerrar Sesión</button>
+    <header style="background: #2c3e50; color: white; padding: 15px;">
+        <nav style="display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto;">
+            <h1>📖 Información Privada de la Receta</h1>
+            <button onclick="logout()" style="background:#e74c3c; color:white; border:none; padding:10px 20px; border-radius:4px; cursor:pointer; font-weight:bold;">Cerrar Sesión</button>
         </nav>
     </header>
 
-    <div class="container" style="background: white; padding: 40px; border-radius: 8px; margin-top: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-        <h2 id="res-titulo" style="color: #27ae60;">Cargando...</h2>
-        <span id="res-dificultad" class="dificultad">Dificultad</span>
-        <p><strong>Tiempo:</strong> <span id="res-tiempo"></span></p>
+    <div class="container" style="background: white; padding: 40px; border-radius: 8px; max-width: 800px; margin: 20px auto; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
         
-        <div style="margin: 20px 0;">
-            <img id="res-img" th:src="@{/images/ensalada.jpg}" alt="Foto" style="width: 100%; max-width: 400px; border-radius: 8px; border: 4px solid #f0f0f0;">
+        <h2 id="res-titulo" style="color: #27ae60; font-size: 2.5em; margin-bottom: 10px;">Cargando información...</h2>
+        
+        <p style="font-size: 1.2em; color: #7f8c8d; margin-bottom: 20px;">
+            <span id="res-origen">Cargando origen...</span>
+        </p>
+
+        <div style="display: flex; gap: 20px; align-items: center; margin-bottom: 30px; background: #f9f9f9; padding: 15px; border-radius: 10px;">
+            <span id="res-dificultad" style="background: #27ae60; color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold;">Dificultad</span>
+            <p style="margin: 0;"><strong>Tiempo estimado:</strong> <span id="res-tiempo">--</span></p>
+        </div>
+        
+        <!-- <div style="text-align: center; margin: 20px 0;">
+            <img id="res-img" src="" alt="Imagen de la receta" style="width: 100%; max-width: 500px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #ddd;">
+        </div> -->
+
+        <div style="display: grid; grid-template-columns: 1fr; gap: 30px;">
+            <section>
+                <h3 style="border-bottom: 2px solid #27ae60; display: inline-block; margin-bottom: 15px;">🛒 Ingredientes (Datos desde Oracle)</h3>
+                <ul id="res-ingredientes" style="line-height: 1.8; font-size: 1.1em;">
+                    <li>Obteniendo lista de ingredientes...</li>
+                </ul>
+            </section>
+
+            <section>
+                <h3 style="border-bottom: 2px solid #27ae60; display: inline-block; margin-bottom: 15px;">👨‍🍳 Pasos de Preparación</h3>
+                <p id="res-pasos" style="white-space: pre-wrap; line-height: 1.6; background: #fffcf0; padding: 20px; border-radius: 8px; border-left: 5px solid #f1c40f; font-size: 1.1em;"></p>
+            </section>
         </div>
 
-        <h3>Ingredientes (Acceso con JWT):</h3>
-        <ul id="res-ingredientes"></ul>
-
-        <h3>Instrucciones de preparación:</h3>
-        <p id="res-pasos"></p>
+        <div style="margin-top: 40px; text-align: center; border-top: 1px solid #eee; padding-top: 20px;">
+            <a th:href="@{/home}" style="color: #2980b9; text-decoration: none; font-weight: bold;">← Volver al Panel de Control</a>
+        </div>
     </div>
+
+    <footer style="text-align: center; padding: 20px; color: #95a5a6;">
+        <p>&copy; 2026 Grupo 8 - Seguridad y Calidad en el Desarrollo</p>
+    </footer>
 </body>
 </html>

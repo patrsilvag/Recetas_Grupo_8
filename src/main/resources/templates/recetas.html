@@ -7,12 +7,14 @@
     <style>
         .banner-comercial { background: #f1c40f; padding: 15px; text-align: center; margin-bottom: 20px; border-radius: 8px; font-weight: bold; }
         .grid-recetas { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; padding: 20px; }
-        .receta-card { border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background: white; }
+        .receta-card { border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background: white; transition: transform 0.2s; }
+        .receta-card:hover { transform: scale(1.02); }
         .receta-header { background: #27ae60; color: white; padding: 10px; }
         .contenido-privado { padding: 15px; background: #f9f9f9; text-align: center; }
-        .btn-ver { color: #2980b9; text-decoration: underline; cursor: pointer; }
+        .btn-ver { color: #2980b9; text-decoration: underline; cursor: pointer; font-weight: bold; border: none; background: none; }
     </style>
     <script>
+        // 1. Redirección lógica
         function validarYRedirigir(id) {
             const token = localStorage.getItem('token');
             if (token) {
@@ -21,6 +23,38 @@
                 window.location.href = "/recetas/login?id=" + id;
             }
         }
+
+        // 2. Carga dinámica de recetas desde el Backend (8081)
+        async function cargarRecetasPublicas() {
+            try {
+                const response = await fetch('http://localhost:8081/recipes');
+                if (response.ok) {
+                    const recetas = await response.json();
+                    const contenedor = document.getElementById('contenedor-recetas');
+                    contenedor.innerHTML = ''; // Limpiar estáticos
+
+                    recetas.forEach(receta => {
+                        const card = `
+                            <article class="receta-card">
+                                <div class="receta-header"><h3>${receta.name}</h3></div>
+                                <div class="contenido-privado">
+                                    <p>🌎 ${receta.countryOfOrigin} | ⏱️ ${receta.cookTimeMinutes} min</p>
+                                    <p>🔒 Contenido Protegido</p>
+                                    <button onclick="validarYRedirigir(${receta.id})" class="btn-ver">
+                                        Ver Receta Completa →
+                                    </button>
+                                </div>
+                            </article>
+                        `;
+                        contenedor.innerHTML += card;
+                    });
+                }
+            } catch (error) {
+                console.error("Error cargando recetas:", error);
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", cargarRecetasPublicas);
     </script>
 </head>
 <body>
@@ -37,33 +71,15 @@
             📢 ¡Aviso Comercial! 20% de descuento en ingredientes orgánicos con el código DUOC2026.
         </div>
 
-        <h2 style="padding: 0 20px;">Recetas Populares (Acceso Público)</h2>
+        <h2 style="padding: 0 20px;">Catálogo de Recetas (Actualizado desde la Nube)</h2>
         
-        <section class="grid-recetas">
-            <article class="receta-card">
-                <div class="receta-header"><h3>Ensalada Tropical</h3></div>
-                <div class="contenido-privado">
-                    <p>⏱️ 15 min | 🔒 Contenido Protegido</p>
-                    <a href="javascript:void(0)" onclick="validarYRedirigir(1)" class="btn-ver">Ver Receta Completa →</a>
-                </div>
-            </article>
-
-            <article class="receta-card">
-                <div class="receta-header"><h3>Smoothie Verde</h3></div>
-                <div class="contenido-privado">
-                    <p>⏱️ 10 min | 🔒 Contenido Protegido</p>
-                    <a href="javascript:void(0)" onclick="validarYRedirigir(2)" class="btn-ver">Ver Receta Completa →</a>
-                </div>
-            </article>
-
-            <article class="receta-card">
-                <div class="receta-header"><h3>Sopa Colorida</h3></div>
-                <div class="contenido-privado">
-                    <p>⏱️ 30 min | 🔒 Contenido Protegido</p>
-                    <a href="javascript:void(0)" onclick="validarYRedirigir(3)" class="btn-ver">Ver Receta Completa →</a>
-                </div>
-            </article>
+        <section id="contenedor-recetas" class="grid-recetas">
+            <p style="padding: 20px;">Cargando recetas disponibles...</p>
         </section>
     </div>
+
+    <footer style="text-align: center; padding: 20px; color: #7f8c8d; font-size: 14px;">
+        &copy; 2026 Ingeniería de Software - Seguridad y Calidad.
+    </footer>
 </body>
 </html>

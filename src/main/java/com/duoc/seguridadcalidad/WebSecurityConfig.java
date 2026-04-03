@@ -21,55 +21,24 @@ public class WebSecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-            http
-                            // 🔥 Deshabilitar CSRF (para facilitar pruebas y JWT)
-                            .csrf(csrf -> csrf.disable())
-                                .headers(headers -> headers
-                                        // A05:2021 - Activa 'nosniff' para evitar MIME-sniffing (corrige alerta 10021)
-                                        .contentTypeOptions(withDefaults()) 
-                                        // Mantiene la protección CSP que configuramos antes
-                                            .contentSecurityPolicy(csp -> csp.policyDirectives(
-                                                            "default-src 'self'; " +
-                                                                            "script-src 'self' 'unsafe-inline'; " +
-                                                                            "style-src 'self' 'unsafe-inline'; " +
-                                                                            "img-src 'self' data:; " +
-                                                                            "connect-src 'self' http://localhost:8081;" // <---
-                                                                                                                        // AGREGAR
-                                                                                                                        // ESTO
-                                            ))
-                                        )
-                            .authorizeHttpRequests((requests) -> requests
+        http
+                // 1. Deshabilitar CSRF para que el login por JS funcione
+                .csrf(csrf -> csrf.disable())
 
-                                            .requestMatchers(
-                                                            "/", // /recetas/
-                                                            "/buscar",
-                                                            "/login",
-                                                            "/detalle",
-                                                            "/css/**",
-                                                            "/js/**",
-                                                            "/images/**",
-                                                            "/**.css")
-                                            .permitAll()
+                // 2. Configurar cabeceras de seguridad (MIME y CSP)
+                .headers(headers -> headers.contentTypeOptions(withDefaults())
+                        .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; "
+                                + "script-src 'self' 'unsafe-inline'; "
+                                + "style-src 'self' 'unsafe-inline'; " + "img-src 'self' data:; "
+                                + "connect-src 'self' http://localhost:8081;")))
 
-                                            .requestMatchers("/home", "/detalle")
-                                            .authenticated()
-                                            // 🔒 cualquier otra
-                                            .anyRequest().authenticated())
+                // 3. LIBERAR TODAS LAS RUTAS
+                // Permitimos que el HTML cargue. La seguridad real se ejecutará
+                // en el navegador mediante el script que revisa el localStorage.
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
 
-                            // 🔐 LOGIN
-                            .formLogin((form) -> form
-                                            .loginPage("/login")
-                                            .defaultSuccessUrl("/home", true)
-                                            .permitAll())
-
-                            // 🚪 LOGOUT
-                            .logout((logout) -> logout
-                                            .logoutSuccessUrl("/")
-                                            .permitAll());
-
-            return http.build();
+        return http.build();
     }
-
     
     @Bean
     @Description("In memory Userdetails service registered since DB doesn't have user table ")

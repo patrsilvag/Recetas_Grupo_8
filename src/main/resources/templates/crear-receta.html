@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Publicar Receta - Control de Calidad</title>
+    <link rel="stylesheet" th:href="@{/recetas.css}">
+    <script>
+        async function guardarReceta(event) {
+            event.preventDefault();
+            const token = localStorage.getItem('token');
+            
+            // Capturamos los datos validados
+            const receta = {
+                name: document.getElementById('name').value,
+                ingredients: document.getElementById('ingredients').value.split(',').map(i => i.trim()),
+                instructions: document.getElementById('instructions').value, // Ahora es obligatorio
+                cuisineType: document.getElementById('cuisineType').value,
+                countryOfOrigin: document.getElementById('countryOfOrigin').value,
+                cookTimeMinutes: parseInt(document.getElementById('cookTime').value),
+                difficulty: document.getElementById('difficulty').value
+            };
+
+            try {
+                const response = await fetch('http://localhost:8081/recipes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token
+                    },
+                    body: JSON.stringify(receta)
+                });
+
+                if (response.ok) {
+                    alert("✅ Receta guardada exitosamente en Oracle Cloud");
+                    window.location.href = "/recetas/home";
+                } else {
+                    alert("❌ Error de servidor: " + response.status);
+                }
+            } catch (error) {
+                console.error("Error de conexión:", error);
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="container" style="max-width: 650px; margin: 20px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+        <h2 style="color: #27ae60; text-align: center; border-bottom: 2px solid #f1f1f1; padding-bottom: 10px;">🍳 Nueva Publicación</h2>
+        
+        <form onsubmit="guardarReceta(event)" style="display: grid; gap: 15px; margin-top: 20px;">
+            
+            <label>Nombre de la Receta:
+                <input type="text" id="name" placeholder="Ej: Pastel de Choclo" required style="width: 100%; padding: 10px; margin-top: 5px;">
+            </label>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <label>Tipo de Cocina:
+                    <select id="cuisineType" required style="width: 100%; padding: 10px; margin-top: 5px;">
+                        <option value="">Seleccione...</option>
+                        <option value="Tradicional">Tradicional</option>
+                        <option value="Italiana">Italiana</option>
+                        <option value="Mexicana">Mexicana</option>
+                        <option value="Vegetariana">Vegetariana</option>
+                        <option value="Marina">Marina</option>
+                    </select>
+                </label>
+
+                <label>País de Origen:
+                    <select id="countryOfOrigin" required style="width: 100%; padding: 10px; margin-top: 5px;">
+                        <option value="">Seleccione...</option>
+                        <option value="Chile">Chile</option>
+                        <option value="México">México</option>
+                        <option value="Italia">Italia</option>
+                        <option value="Perú">Perú</option>
+                        <option value="España">España</option>
+                        <option value="Otro">Otro</option>
+                    </select>
+                </label>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <label>Tiempo (minutos):
+                    <input type="number" id="cookTime" min="1" required style="width: 100%; padding: 10px; margin-top: 5px;">
+                </label>
+
+                <label>Dificultad:
+                    <select id="difficulty" style="width: 100%; padding: 10px; margin-top: 5px;">
+                        <option value="Fácil">Fácil</option>
+                        <option value="Media">Media</option>
+                        <option value="Difícil">Difícil</option>
+                    </select>
+                </label>
+            </div>
+
+            <label>Ingredientes (Separados por coma):
+                <textarea id="ingredients" placeholder="Harina, huevos, azúcar..." required rows="2" style="width: 100%; padding: 10px; margin-top: 5px;"></textarea>
+            </label>
+
+            <label>Pasos de Preparación:
+                <textarea id="instructions" placeholder="Escriba el paso a paso detallado..." required rows="5" style="width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #27ae60;"></textarea>
+            </label>
+
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button type="submit" style="flex: 2; background: #27ae60; color: white; padding: 15px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;">
+                    🚀 Publicar Receta
+                </button>
+                <a th:href="@{/home}" style="flex: 1; text-align: center; background: #95a5a6; color: white; padding: 15px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

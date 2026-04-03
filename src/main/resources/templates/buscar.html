@@ -9,64 +9,57 @@
     <header>
         <nav>
             <h1>🔍 Buscador de Recetas</h1>
-            <a th:href="@{/home}">Volver al Inicio</a>
+            <div style="display: flex; gap: 15px;">
+                <a th:href="@{/home}" style="color: white; text-decoration: none;">Volver al Inicio</a>
+                <button onclick="logout()" style="background: #e74c3c; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px;">Cerrar Sesión</button>
+            </div>
         </nav>
     </header>
 
     <div class="container" style="padding: 20px;">
         <section class="beneficios">
             <h2>Filtros de Búsqueda</h2>
-            <form th:action="@{/buscar}" method="get" style="display: grid; gap: 15px; margin-bottom: 30px; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+            <form id="formBusqueda" onsubmit="ejecutarBusqueda(event)" style="display: grid; gap: 15px; margin-bottom: 30px; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <input type="text" name="nombre" placeholder="Nombre de la receta..." style="padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+                    <input type="text" id="nombre" placeholder="Nombre de la receta..." style="padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
                     
-                    <select name="cocina" style="padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+                    <select id="cocina" style="padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
                         <option value="">Tipo de cocina (Todas)</option>
                         <option value="italiana">Italiana</option>
                         <option value="chilena">Chilena</option>
+                        <option value="peruana">Peruana</option>
                         <option value="mexicana">Mexicana</option>
                         <option value="mediterranea">Mediterránea</option>
                     </select>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <input type="text" name="ingredientes" placeholder="Ingredientes (ej: mango, lechuga)..." style="padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+                    <input type="text" id="ingredientes" placeholder="Ingredientes (ej: mango, lechuga)..." style="padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
                     
-                    <input type="text" name="pais" placeholder="País de origen..." style="padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+                    <input type="text" id="pais" placeholder="País de origen..." style="padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
                 </div>
 
-                <select name="dificultad" style="padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
-                    <option value="">Dificultad (Todas)</option>
-                    <option value="facil">Fácil</option>
-                    <option value="media">Media</option>
-                    <option value="dificil">Difícil</option>
-                </select>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <select id="dificultad" style="padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+                        <option value="">Dificultad (Todas)</option>
+                        <option value="facil">Fácil</option>
+                        <option value="media">Media</option>
+                        <option value="dificil">Difícil</option>
+                    </select>
+                    <button type="button" onclick="limpiarFiltros()" style="background-color: #95a5a6; color: white; border: none; border-radius: 5px; cursor: pointer;">Limpiar</button>
+                </div>
 
                 <button type="submit" style="background-color: #27ae60; color: white; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 16px;">
-                    Filtrar Recetas
+                    Filtrar Recetas Ahora
                 </button>
             </form>
         </section>
 
         <section>
-            <h3 style="margin-bottom: 20px; color: #2c3e50;">Resultados (Código Estático)</h3>
-            <div class="recetas-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
-                
-                <div class="receta-card" style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                    <h3 style="color: #27ae60;">Ensalada Tropical</h3>
-                    <p><strong>País:</strong> Chile | <strong>Dificultad:</strong> <span class="dificultad facil">Fácil</span></p>
-                    <p style="font-size: 14px; color: #666; margin: 10px 0;">Una mezcla fresca de frutas y verduras de temporada.</p>
-                    <a th:href="@{/detalle}" style="display: inline-block; margin-top: 10px; color: #e74c3c; font-weight: bold; text-decoration: none;">Ver Detalle Completo (Privado) →</a>
-                </div>
-
-                <div class="receta-card" style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                    <h3 style="color: #27ae60;">Sopa de Verduras Rustica</h3>
-                    <p><strong>País:</strong> Italia | <strong>Dificultad:</strong> <span class="dificultad media">Media</span></p>
-                    <p style="font-size: 14px; color: #666; margin: 10px 0;">Sopa caliente ideal para días fríos con ingredientes naturales.</p>
-                    <a th:href="@{/detalle}" style="display: inline-block; margin-top: 10px; color: #e74c3c; font-weight: bold; text-decoration: none;">Ver Detalle Completo (Privado) →</a>
-                </div>
-
+            <h3 style="margin-bottom: 20px; color: #2c3e50;">Resultados del Recetario</h3>
+            <div id="contenedor-resultados" class="recetas-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                <p style="text-align: center; grid-column: 1/-1;">Usa los filtros para buscar recetas en la base de datos.</p>
             </div>
         </section>
     </div>
@@ -74,5 +67,112 @@
     <footer style="margin-top: 50px; text-align: center; padding: 20px; background: #2c3e50; color: white;">
         <p>&copy; 2026 Recetas Saludables - Grupo 8</p>
     </footer>
+
+    <script>
+        // Función principal de búsqueda
+        async function ejecutarBusqueda(event) {
+            if(event) event.preventDefault();
+            
+            const token = localStorage.getItem('token');
+            const container = document.getElementById('contenedor-resultados');
+            
+            if (!token) {
+                window.location.href = "/recetas/login";
+                return;
+            }
+
+            container.innerHTML = "<p style='text-align:center; grid-column: 1/-1;'>Cargando recetas desde Oracle...</p>";
+
+            // Construcción de Parámetros
+            const params = new URLSearchParams();
+            const nombre = document.getElementById('nombre').value;
+            const cocina = document.getElementById('cocina').value;
+            const pais = document.getElementById('pais').value;
+            const dificultad = document.getElementById('dificultad').value;
+            const ingredientes = document.getElementById('ingredientes').value;
+
+            if (nombre) params.append('name', nombre);
+            if (cocina) params.append('cuisineType', cocina);
+            if (pais) params.append('countryOfOrigin', pais);
+            if (dificultad) params.append('difficulty', dificultad);
+            if (ingredientes) params.append('ingredients', ingredientes);
+
+            try {
+                const response = await fetch(`http://localhost:8081/recipes/search?${params.toString()}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': token,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const recetas = await response.json();
+                    renderizarRecetas(recetas);
+                } else if (response.status === 403) {
+                    alert("Sesión expirada. Por favor re-ingresa.");
+                    logout();
+                } else {
+                    container.innerHTML = "<p style='color:red;'>Error al consultar el servidor.</p>";
+                }
+            } catch (error) {
+                console.error("Error en Fetch:", error);
+                container.innerHTML = "<p style='color:red;'>No se pudo conectar con el Backend (8081).</p>";
+            }
+        }
+
+        // Función para dibujar las "Cards"
+        function renderizarRecetas(recetas) {
+            const container = document.getElementById('contenedor-resultados');
+            container.innerHTML = "";
+
+            if (recetas.length === 0) {
+                container.innerHTML = "<p style='text-align:center; grid-column: 1/-1;'>No se encontraron recetas con esos criterios.</p>";
+                return;
+            }
+
+            const colores = {
+                'facil': '#27ae60',
+                'media': '#f1c40f',
+                'dificil': '#e74c3c'
+            };
+
+            recetas.forEach(receta => {
+                const badgeColor = colores[receta.difficulty.toLowerCase()] || '#95a5a6';
+                
+                const card = `
+                    <div class="receta-card" style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-top: 4px solid ${badgeColor};">
+                        <h3 style="color: #2c3e50;">${receta.name}</h3>
+                        <p><strong>País:</strong> ${receta.countryOfOrigin}</p>
+                        <p><strong>Dificultad:</strong> 
+                            <span style="background:${badgeColor}; color:white; padding:2px 8px; border-radius:10px; font-size:12px;">
+                                ${receta.difficulty}
+                            </span>
+                        </p>
+                        <p style="font-size: 14px; color: #666; margin: 10px 0; height: 40px; overflow: hidden;">
+                            ${receta.instructions}
+                        </p>
+                        <a href="/recetas/detalle?id=${receta.id}" style="display: inline-block; margin-top: 10px; color: #e74c3c; font-weight: bold; text-decoration: none;">
+                            Ver Detalle Completo →
+                        </a>
+                    </div>
+                `;
+                container.innerHTML += card;
+            });
+        }
+
+        function limpiarFiltros() {
+            document.getElementById('formBusqueda').reset();
+            ejecutarBusqueda();
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = "/recetas/login";
+        }
+
+        // Cargar todas las recetas al entrar por primera vez
+        document.addEventListener('DOMContentLoaded', ejecutarBusqueda);
+    </script>
 </body>
 </html>

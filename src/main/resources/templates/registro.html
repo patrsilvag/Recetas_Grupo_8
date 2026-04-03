@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <title>Registrar Usuario - Privado</title>
+    <link rel="stylesheet" type="text/css" th:href="@{/login.css}">
+</head>
+<body>
+    <div class="login-container" style="max-width: 500px;">
+        <h2>➕ Registrar Nuevo Usuario</h2>
+        <p style="text-align: center; color: #666; font-size: 14px;">Solo personal autorizado puede crear cuentas.</p>
+        
+        <form id="form-registro" onsubmit="registrarUsuario(event)">
+            <div>
+                <label>Nombre Completo: <input type="text" id="nombreCompleto" required/></label>
+            </div>
+            <div>
+                <label>Username (Usuario): <input type="text" id="username" required/></label>
+            </div>
+            <div>
+                <label>Correo Electrónico: <input type="email" id="email" required/></label>
+            </div>
+            <div>
+                <label>Contraseña: <input type="password" id="password" required/></label>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <input type="submit" value="Guardar Usuario" style="background-color: #27ae60; width: 100%;"/>
+                <a th:href="@{/home}" style="background-color: #7f8c8d; color: white; text-align: center; text-decoration: none; padding: 10px; border-radius: 4px; width: 100%;">Cancelar</a>
+            </div>
+        </form>
+    </div>
+
+    <script th:inline="javascript">
+        async function registrarUsuario(event) {
+            event.preventDefault();
+
+            // 1. Obtener el Token de la sesión (El administrador logueado)
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert("⚠️ Error de Seguridad: No se encontró un Token. Inicia sesión nuevamente.");
+                window.location.replace("/recetas/login");
+                return;
+            }
+
+            // 2. Construir el objeto JSON para enviar al backend 8081
+            const nuevoUsuario = {
+                nombreCompleto: document.getElementById('nombreCompleto').value,
+                username: document.getElementById('username').value,
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value
+            };
+
+            const backendUrl = 'http://localhost:8081/register';
+
+            try {
+                // 3. Consumir la API Privada enviando el Token en los Headers
+                const response = await fetch(backendUrl, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': token // Aquí va el "Bearer token..."
+                    },
+                    body: JSON.stringify(nuevoUsuario)
+                });
+
+                if (response.status === 201) {
+                    alert("✅ Usuario creado exitosamente en la base de datos.");
+                    document.getElementById('form-registro').reset(); // Limpia el formulario
+                } else if (response.status === 400) {
+                    const errorMsg = await response.text();
+                    alert("❌ Error: " + errorMsg); // Ej: El usuario ya existe
+                } else if (response.status === 403) {
+                    alert("❌ Acceso Denegado. El token expiró o no tiene permisos.");
+                } else {
+                    alert("❌ Ocurrió un error en el servidor (Error " + response.status + ")");
+                }
+            } catch (error) {
+                console.error("Error de conexión:", error);
+                alert("No se pudo contactar al backend en el puerto 8081");
+            }
+        }
+    </script>
+</body>
+</html>
