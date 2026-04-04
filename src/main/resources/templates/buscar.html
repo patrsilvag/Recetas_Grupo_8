@@ -73,13 +73,7 @@
         async function ejecutarBusqueda(event) {
             if(event) event.preventDefault();
             
-            const token = localStorage.getItem('token');
             const container = document.getElementById('contenedor-resultados');
-            
-            if (!token) {
-                window.location.href = "/recetas/login";
-                return;
-            }
 
             container.innerHTML = "<p style='text-align:center; grid-column: 1/-1;'>Cargando recetas desde Oracle...</p>";
 
@@ -101,7 +95,6 @@
                 const response = await fetch(`http://localhost:8081/recipes/search?${params.toString()}`, {
                     method: 'GET',
                     headers: {
-                        'Authorization': token,
                         'Content-Type': 'application/json'
                     }
                 });
