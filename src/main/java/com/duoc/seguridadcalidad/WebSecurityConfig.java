@@ -40,33 +40,33 @@ public class WebSecurityConfig {
         return http.build();
     }
     
-    @Bean
-    @Description("In memory Userdetails service registered since DB doesn't have user table ")
-    public UserDetailsService users() {
-        // The builder will ensure the passwords are encoded before saving in memory
-        UserDetails user = User.builder()
-                .username("user")
-                .password(passwordEncoder().encode("password"))
-                .roles("USER")
-                .build();
-        UserDetails admin = User.builder()
-                .username("admin")
-                .password(passwordEncoder().encode("password"))
-                .roles("USER", "ADMIN")
-                .build();
-        // TERCER USUARIO REQUERIDO POR LA RÚBRICA
-        UserDetails chef = User.builder()
-                .username("chef")
-                .password(passwordEncoder().encode("password"))
-                .roles("USER")
-                .build();
-        return new InMemoryUserDetailsManager(user, admin, chef);
-    }
+    // @Bean
+    // @Description("In memory Userdetails service registered since DB doesn't have user table ")
+    // public UserDetailsService users() {
+    //     // The builder will ensure the passwords are encoded before saving in memory
+    //     UserDetails user = User.builder()
+    //             .username("user")
+    //             .password(passwordEncoder().encode("password"))
+    //             .roles("USER")
+    //             .build();
+    //     UserDetails admin = User.builder()
+    //             .username("admin")
+    //             .password(passwordEncoder().encode("password"))
+    //             .roles("USER", "ADMIN")
+    //             .build();
+    //     // TERCER USUARIO REQUERIDO POR LA RÚBRICA
+    //     UserDetails chef = User.builder()
+    //             .username("chef")
+    //             .password(passwordEncoder().encode("password"))
+    //             .roles("USER")
+    //             .build();
+    //     return new InMemoryUserDetailsManager(user, admin, chef);
+    // }
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+    // @Bean
+    // public PasswordEncoder passwordEncoder() {
+    //     return new BCryptPasswordEncoder();
+    // }
 
 }
 
