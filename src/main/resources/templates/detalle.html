@@ -33,7 +33,7 @@
                 const response = await fetch(`http://localhost:8081/recipes/private/${id}`, {
                     method: 'GET',
                     headers: {
-                        'Authorization': token, // Enviamos el JWT para pasar el filtro de seguridad
+                        'Authorization': 'Bearer ' + token, // Enviamos el JWT para pasar el filtro de seguridad
                         'Content-Type': 'application/json'
                     }
                 });
