@@ -27,10 +27,9 @@ public class WebSecurityConfig {
 
                 // 2. Configurar cabeceras de seguridad (MIME y CSP)
                 .headers(headers -> headers.contentTypeOptions(withDefaults())
-                        .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; "
-                                + "script-src 'self' 'unsafe-inline'; "
-                                + "style-src 'self' 'unsafe-inline'; " + "img-src 'self' data:; "
-                                + "connect-src 'self' http://localhost:8081;")))
+                        
+                        .contentSecurityPolicy(csp -> csp.policyDirectives(
+                        "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: http://localhost:8081 https:; connect-src 'self' http://localhost:8081;")))
 
                 // 3. LIBERAR TODAS LAS RUTAS
                 // Permitimos que el HTML cargue. La seguridad real se ejecutará

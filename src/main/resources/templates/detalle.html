@@ -5,18 +5,15 @@
     <title>Detalle de Receta - Acceso Seguro</title>
     <link rel="stylesheet" th:href="@{/recetas.css}">
     <script>
-        // 1. PROTECCIÓN Y CARGA: Verificar Token JWT y consumir API del Backend
+        // 1. PROTECCIÓN Y CARGA: Verificar Token JWT
         document.addEventListener("DOMContentLoaded", function() {
             const token = localStorage.getItem('token');
-            
-            // Si no hay token, redirigir al login
             if (!token) {
-                alert("⚠️ Acceso denegado. Debes iniciar sesión para ver los detalles.");
+                alert("⚠️ Acceso denegado. Debes iniciar sesión.");
                 window.location.href = "/recetas/login";
                 return;
             }
 
-            // 2. LÓGICA DINÁMICA: Leer el ID de la URL (ej: detalle?id=10)
             const params = new URLSearchParams(window.location.search);
             const recetaId = params.get('id');
             
@@ -27,13 +24,13 @@
             }
         });
 
-        // 3. FUNCIÓN AJAX: Consume el puerto 8081 de Spring Boot
+        // 2. FUNCIÓN AJAX: Consume el puerto 8081
         async function cargarDatosDesdeBackend(id, token) {
             try {
                 const response = await fetch(`http://localhost:8081/recipes/private/${id}`, {
                     method: 'GET',
                     headers: {
-                        'Authorization': 'Bearer ' + token, // Enviamos el JWT para pasar el filtro de seguridad
+                        'Authorization': 'Bearer ' + token,
                         'Content-Type': 'application/json'
                     }
                 });
@@ -41,46 +38,123 @@
                 if (response.ok) {
                     const receta = await response.json();
                     
-                    // Inyección segura de datos en el DOM
                     document.getElementById('res-titulo').textContent = receta.name;
                     document.getElementById('res-dificultad').textContent = "Dificultad: " + receta.difficulty;
                     document.getElementById('res-tiempo').textContent = receta.cookTimeMinutes + " min";
                     document.getElementById('res-pasos').textContent = receta.instructions;
                     document.getElementById('res-origen').textContent = receta.cuisineType + " | " + receta.countryOfOrigin;
 
-                    // Renderizar lista de ingredientes dinámicamente
+                    // Ingredientes
                     const lista = document.getElementById('res-ingredientes');
-                    lista.innerHTML = ""; // Limpiar mensaje de carga
+                    lista.innerHTML = ""; 
                     receta.ingredients.forEach(ing => {
                         let li = document.createElement('li');
-                        li.textContent = ing; // Uso de textContent por seguridad (XSS)
+                        li.textContent = ing; 
                         lista.appendChild(li);
                     });
 
-                    // Validamos que la lista 'photos' exista y tenga al menos un elemento
-                // if (receta.photos && receta.photos.length > 0) {
-                //     // Tomamos la primera foto de la lista [0]
-                //     const rutaFoto = receta.photos[0];
-                    
-                //     // Verificamos si la ruta ya trae el / al principio
-                //     document.getElementById('res-img').src = rutaFoto.startsWith('/') ? rutaFoto : '/' + rutaFoto;
-                    
-                //     console.log("Cargando foto principal: " + rutaFoto);
-                // } else {
-                //     // Imagen por defecto si no hay fotos en la BD
-                //     document.getElementById('res-img').src = "/images/default-recipe.jpg";
-                // }
+                    // Renderizar Fotos y Videos
+                    const mediaContainer = document.getElementById('res-media');
+                    mediaContainer.innerHTML = ""; 
+                    if (receta.photos) {
+                        receta.photos.forEach(fotoUrl => {
+                            mediaContainer.innerHTML += `<img src="${fotoUrl}" alt="Foto" style="width: 100%; max-width: 500px; border-radius: 12px; margin-bottom: 15px; display: block; margin-left: auto; margin-right: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">`;
+                        });
+                    }
 
-                } else if (response.status === 403 || response.status === 401) {
-                    alert("🚫 Sesión expirada o sin permisos.");
-                    logout();
+                    if (receta.videos) {
+                        receta.videos.forEach(videoUrl => {
+                            mediaContainer.innerHTML += `
+                                <div style="text-align: center; margin-bottom: 15px;">
+                                    <a href="${videoUrl}" target="_blank" style="display: inline-block; background: #e74c3c; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: bold;">▶️ Ver Video</a>
+                                </div>`;
+                        });
+                    }
+
+                    // --- NUEVO: CARGAR COMENTARIOS ---
+                    const comContainer = document.getElementById('lista-comentarios');
+                    comContainer.innerHTML = "";
+                    if (receta.comments && receta.comments.length > 0) {
+                        receta.comments.forEach(c => {
+                            const estrellas = "⭐".repeat(c.rating);
+                            comContainer.innerHTML += `
+                                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid #f1c40f;">
+                                    <strong>${c.author}</strong> <span style="margin-left:10px;">${estrellas}</span>
+                                    <p style="margin: 5px 0 0 0; color: #34495e;">${c.text}</p>
+                                </div>`;
+                        });
+                    } else {
+                        comContainer.innerHTML = "<p>No hay comentarios aún.</p>";
+                    }
+
                 } else {
-                    document.getElementById('res-titulo').textContent = "Error: Receta no encontrada en la base de datos";
+                    logout();
                 }
             } catch (error) {
-                console.error("Error de conexión:", error);
-                document.getElementById('res-titulo').textContent = "Error al conectar con el servidor 8081";
+                console.error("Error:", error);
             }
+        }
+
+        // 3. SUBIR FOTO LOCAL
+        async function subirImagenLocal() {
+            const token = localStorage.getItem('token');
+            const params = new URLSearchParams(window.location.search);
+            const recetaId = params.get('id');
+            const fileInput = document.getElementById('fileInput');
+            
+            if (fileInput.files.length === 0) return alert("Selecciona una imagen.");
+
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+
+            const response = await fetch(`http://localhost:8081/recipes/${recetaId}/upload-photo`, {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + token },
+                body: formData
+            });
+
+            if (response.ok) location.reload();
+        }
+
+        // 4. ENVIAR COMENTARIO Y VALORACIÓN
+        async function enviarComentario() {
+            const token = localStorage.getItem('token');
+            const params = new URLSearchParams(window.location.search);
+            const recetaId = params.get('id');
+
+            const comentario = {
+                text: document.getElementById('com-text').value,
+                rating: parseInt(document.getElementById('com-rating').value),
+                author: "Usuario Autenticado" 
+            };
+
+            if (!comentario.text) return alert("Escribe un comentario.");
+
+            const response = await fetch(`http://localhost:8081/recipes/${recetaId}/comments`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(comentario)
+            });
+
+            if (response.ok) {
+                alert("¡Gracias por tu opinión!");
+                location.reload();
+            }
+        }
+
+        // 5. REDES SOCIALES
+        function compartirWhatsApp() {
+            const nombre = document.getElementById('res-titulo').textContent;
+            const msg = encodeURIComponent(`¡Mira esta receta de ${nombre}!\n${window.location.href}`);
+            window.open(`https://api.whatsapp.com/send?text=${msg}`, '_blank');
+        }
+
+        function copiarEnlace() {
+            navigator.clipboard.writeText(window.location.href);
+            alert("🔗 Enlace copiado.");
         }
 
         function logout() {
@@ -91,50 +165,66 @@
 </head>
 <body>
     <header style="background: #2c3e50; color: white; padding: 15px;">
-        <nav style="display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto;">
-            <h1>📖 Información Privada de la Receta</h1>
-            <button onclick="logout()" style="background:#e74c3c; color:white; border:none; padding:10px 20px; border-radius:4px; cursor:pointer; font-weight:bold;">Cerrar Sesión</button>
+        <nav style="display: flex; justify-content: space-between; max-width: 1200px; margin: 0 auto;">
+            <h1>📖 Detalle de Receta</h1>
+            <button onclick="logout()" style="background:#e74c3c; color:white; border:none; padding:10px; border-radius:4px; cursor:pointer;">Cerrar Sesión</button>
         </nav>
     </header>
 
     <div class="container" style="background: white; padding: 40px; border-radius: 8px; max-width: 800px; margin: 20px auto; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
         
-        <h2 id="res-titulo" style="color: #27ae60; font-size: 2.5em; margin-bottom: 10px;">Cargando información...</h2>
-        
-        <p style="font-size: 1.2em; color: #7f8c8d; margin-bottom: 20px;">
-            <span id="res-origen">Cargando origen...</span>
-        </p>
+        <h2 id="res-titulo" style="color: #27ae60; font-size: 2.5em;">Cargando...</h2>
+        <p id="res-origen" style="color: #7f8c8d;"></p>
 
-        <div style="display: flex; gap: 20px; align-items: center; margin-bottom: 30px; background: #f9f9f9; padding: 15px; border-radius: 10px;">
-            <span id="res-dificultad" style="background: #27ae60; color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold;">Dificultad</span>
-            <p style="margin: 0;"><strong>Tiempo estimado:</strong> <span id="res-tiempo">--</span></p>
+        <div style="display: flex; gap: 20px; margin-bottom: 30px; background: #f9f9f9; padding: 15px; border-radius: 10px;">
+            <span id="res-dificultad" style="background: #27ae60; color: white; padding: 5px 15px; border-radius: 20px;"></span>
+            <span id="res-tiempo"></span>
         </div>
         
-        <!-- <div style="text-align: center; margin: 20px 0;">
-            <img id="res-img" src="" alt="Imagen de la receta" style="width: 100%; max-width: 500px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #ddd;">
-        </div> -->
+        <div id="res-media"></div>
 
-        <div style="display: grid; grid-template-columns: 1fr; gap: 30px;">
-            <section>
-                <h3 style="border-bottom: 2px solid #27ae60; display: inline-block; margin-bottom: 15px;">🛒 Ingredientes (Datos desde Oracle)</h3>
-                <ul id="res-ingredientes" style="line-height: 1.8; font-size: 1.1em;">
-                    <li>Obteniendo lista de ingredientes...</li>
-                </ul>
-            </section>
+        <section>
+            <h3>🛒 Ingredientes</h3>
+            <ul id="res-ingredientes"></ul>
+        </section>
 
-            <section>
-                <h3 style="border-bottom: 2px solid #27ae60; display: inline-block; margin-bottom: 15px;">👨‍🍳 Pasos de Preparación</h3>
-                <p id="res-pasos" style="white-space: pre-wrap; line-height: 1.6; background: #fffcf0; padding: 20px; border-radius: 8px; border-left: 5px solid #f1c40f; font-size: 1.1em;"></p>
-            </section>
-        </div>
+        <section>
+            <h3>👨‍🍳 Preparación</h3>
+            <p id="res-pasos" style="white-space: pre-wrap; background: #fffcf0; padding: 20px; border-left: 5px solid #f1c40f;"></p>
+        </section>
 
-        <div style="margin-top: 40px; text-align: center; border-top: 1px solid #eee; padding-top: 20px;">
-            <a th:href="@{/home}" style="color: #2980b9; text-decoration: none; font-weight: bold;">← Volver al Panel de Control</a>
+        <section style="margin-top: 40px; border-top: 2px solid #eee; padding-top: 20px;">
+            <h3>💬 Comentarios y Valoraciones</h3>
+            <div id="lista-comentarios"></div>
+
+            <div style="background: #ebf5fb; padding: 20px; border-radius: 8px; margin-top: 20px;">
+                <h4>Tu opinión importa</h4>
+                <select id="com-rating" style="margin-bottom: 10px; padding: 5px;">
+                    <option value="5">⭐⭐⭐⭐⭐ (5)</option>
+                    <option value="4">⭐⭐⭐⭐ (4)</option>
+                    <option value="3">⭐⭐⭐ (3)</option>
+                    <option value="2">⭐⭐ (2)</option>
+                    <option value="1">⭐ (1)</option>
+                </select>
+                <textarea id="com-text" placeholder="¿Qué tal te pareció?" style="width: 100%; height: 60px; display: block; margin-bottom: 10px;"></textarea>
+                <button onclick="enviarComentario()" style="background: #2980b9; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">Publicar</button>
+            </div>
+        </section>
+
+        <section style="text-align: center; margin-top: 30px;">
+            <button onclick="compartirWhatsApp()" style="background: #25D366; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer;">WhatsApp</button>
+            <button onclick="copiarEnlace()" style="background: #34495e; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer;">Copiar Link</button>
+        </section>
+
+        <section style="margin-top: 40px; padding: 20px; background: #f0f4f8; border-radius: 8px;">
+            <h3>📸 Gestión Multimedia</h3>
+            <input type="file" id="fileInput" accept="image/*">
+            <button onclick="subirImagenLocal()" style="background: #27ae60; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer;">Subir Foto</button>
+        </section>
+
+        <div style="margin-top: 20px; text-align: center;">
+            <a th:href="@{/home}">← Volver</a>
         </div>
     </div>
-
-    <footer style="text-align: center; padding: 20px; color: #95a5a6;">
-        <p>&copy; 2026 Grupo 8 - Seguridad y Calidad en el Desarrollo</p>
-    </footer>
 </body>
 </html>
