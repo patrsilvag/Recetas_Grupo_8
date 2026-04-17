@@ -29,8 +29,7 @@ public class WebSecurityConfig {
                 .headers(headers -> headers.contentTypeOptions(withDefaults())
                         
                         .contentSecurityPolicy(csp -> csp.policyDirectives(
-                        "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: http://localhost:8081 https:; connect-src 'self' http://localhost:8081;")))
-
+                        "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: blob: http://localhost:8081 https:; connect-src 'self' http://localhost:8081;")))
                 // 3. LIBERAR TODAS LAS RUTAS
                 // Permitimos que el HTML cargue. La seguridad real se ejecutará
                 // en el navegador mediante el script que revisa el localStorage.

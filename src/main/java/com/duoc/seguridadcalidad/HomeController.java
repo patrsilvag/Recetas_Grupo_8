@@ -60,7 +60,12 @@ public class HomeController {
             return "crear-receta";
         }
 
-        
+        // NUEVA RUTA: GESTIÓN DE USUARIOS (Semana 6)
+        @GetMapping("/admin-usuarios")
+        public String adminUsuarios(Model model) {
+            model.addAttribute("backendUrl", backendUrl);
+            return "admin-usuarios";
+        }
 
 }
 

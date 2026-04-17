@@ -5,21 +5,46 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /> 
     <link rel="stylesheet" type="text/css" th:href="@{/recetas.css}">
     <script>
+        // Función para decodificar el JWT y ver qué hay adentro
+        function parseJwt(token) {
+            try {
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+                return JSON.parse(jsonPayload);
+            } catch(e) { return {}; }
+        }
+
         document.addEventListener("DOMContentLoaded", function() {
             const token = localStorage.getItem('token');
             
-            // 1. Si no hay token, lo mandamos al login
+            // 1. Si no hay token, al login
             if (!token) {
                 window.location.replace("/recetas/login");
                 return;
             }
 
-            // 2. Si hay token, mostramos las opciones
+            // 2. Mostrar opciones generales
             document.getElementById('admin-panel').style.display = 'block';
+
+            // 3. Magia: Leer el token para saber si es ADMIN
+            const decodedPayload = parseJwt(token);
+            const tokenString = JSON.stringify(decodedPayload).toUpperCase();
+            
+            if (tokenString.includes('ADMIN')) {
+                // Guardamos el rol para que admin-usuarios.html lo sepa
+                localStorage.setItem('role', 'ADMIN');
+                // Mostramos el botón secreto
+                document.getElementById('super-admin-panel').style.display = 'block';
+            } else {
+                localStorage.setItem('role', 'USER');
+            }
         });
 
         function logout() {
-            localStorage.removeItem('token');
+            localStorage.clear();
             window.location.replace("/recetas/");
         }
     </script>
@@ -40,10 +65,19 @@
         <div id="admin-panel" style="display: none; background: #f4f7f6; border-left: 5px solid #27ae60; padding: 20px; margin-top: 30px;">
             <h3 style="color: #2c3e50;">🍳 Gestión de Recetas</h3>
             <p>Como usuario registrado, puedes publicar tus propias creaciones saludables:</p>
-            
             <div style="display: flex; justify-content: center; margin-top: 20px;">
-                <a th:href="@{/crear-receta}" style="background: #27ae60; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; text-align: center; display: inline-block;">
+                <a th:href="@{/crear-receta}" style="background: #27ae60; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; text-align: center;">
                     ➕ Publicar Nueva Receta
+                </a>
+            </div>
+        </div>
+
+        <div id="super-admin-panel" style="display: none; background: #fff3cd; border-left: 5px solid #ffc107; padding: 20px; margin-top: 20px;">
+            <h3 style="color: #856404;">🛡️ Panel de Administración</h3>
+            <p>Tienes privilegios de Administrador. Puedes gestionar los usuarios del sistema.</p>
+            <div style="display: flex; justify-content: center; margin-top: 20px;">
+                <a th:href="@{/admin-usuarios}" style="background: #ffc107; color: #856404; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                    👥 Gestionar Usuarios
                 </a>
             </div>
         </div>
