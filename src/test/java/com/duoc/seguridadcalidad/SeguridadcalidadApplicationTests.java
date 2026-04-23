@@ -10,4 +10,9 @@ class SeguridadcalidadApplicationTests {
 	void contextLoads() {
 	}
 
+    @Test
+    void mainMethodTest() {
+        // Esto asegura que la clase principal se ejecute y sea contabilizada por JaCoCo
+        SeguridadcalidadApplication.main(new String[] {});
+    }
 }
