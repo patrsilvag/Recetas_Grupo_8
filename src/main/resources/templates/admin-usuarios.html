@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <title>Gestión de Usuarios - Seguridad y Calidad</title>
@@ -17,7 +17,7 @@
         </div>
     </nav>
 
-    <div class="container mt-5">
+    <div class="container mt-5" sec:authorize="hasRole('ADMIN')">
         <h2 class="mb-4">🛡️ Panel de Administración de Usuarios</h2>
         
         <div id="alertArea"></div>
@@ -35,10 +35,17 @@
                             <th>Acciones</th>
                         </tr>
                     </thead>
-                    <tbody id="tablaUsuarios">
-                        </tbody>
+                    <tbody id="tablaUsuarios"></tbody>
                 </table>
             </div>
+        </div>
+    </div>
+
+    <div class="container mt-5" sec:authorize="!hasRole('ADMIN')">
+        <div class="alert alert-danger">
+            <h3>Acceso Denegado</h3>
+            <p>No tienes privilegios de administrador para ver este panel.</p>
+            <a href="/recetas/home" class="btn btn-primary">Regresar al Inicio</a>
         </div>
     </div>
 
@@ -47,30 +54,17 @@
         const BACKEND_URL = /*[[${backendUrl}]]*/ 'http://localhost:8081';
         /*]]>*/
 
-        // 1. Verificar seguridad al cargar la página
         document.addEventListener("DOMContentLoaded", () => {
-            // 💡 CORRECCIÓN 1: Buscamos exactamente 'token', no jwtToken
             const token = localStorage.getItem('token');
-            const role = localStorage.getItem('role');
 
-            if (!token) {
-                // 💡 CORRECCIÓN 2: Ruta correcta al login
+            // Si el servidor permitió cargar la página, procedemos con los datos
+            if (token) {
+                cargarUsuarios(token);
+            } else {
                 window.location.href = '/recetas/login';
-                return;
             }
-
-            // Seguridad en el front: Si no es admin, lo echamos
-            if (role !== 'ADMIN' && role !== 'ROLE_ADMIN') {
-                alert("Acceso denegado. Solo administradores.");
-                // 💡 CORRECCIÓN 3: Ruta correcta al home
-                window.location.href = '/recetas/home';
-                return;
-            }
-
-            cargarUsuarios(token);
         });
 
-        // 2. Cargar usuarios desde el Backend
         function cargarUsuarios(token) {
             fetch(`${BACKEND_URL}/users`, {
                 method: 'GET',
@@ -80,40 +74,49 @@
                 }
             })
             .then(response => {
-                if (!response.ok) throw new Error("Error al cargar usuarios");
+                // 🛡️ Gestión de errores robusta desde el servidor
+                if (response.status === 403) throw new Error("No tienes permiso (Forbidden)");
+                if (!response.ok) throw new Error("Error de sesión o conexión");
                 return response.json();
             })
             .then(users => {
                 const tbody = document.getElementById('tablaUsuarios');
-                tbody.innerHTML = ''; // Limpiar tabla
-
-                users.forEach(user => {
-                    const row = `
-                        <tr>
-                            <td>${user.id}</td>
-                            <td><strong>${user.username}</strong></td>
-                            <td>${user.nombreCompleto || 'N/A'}</td>
-                            <td>${user.email}</td>
-                            <td>
-                                <select class="form-select form-select-sm" onchange="cambiarRol(${user.id}, this.value)">
-                                    <option value="USER" ${user.role === 'USER' ? 'selected' : ''}>USER</option>
-                                    <option value="ADMIN" ${user.role === 'ADMIN' ? 'selected' : ''}>ADMIN</option>
-                                </select>
-                            </td>
-                            <td>
-                                <button onclick="eliminarUsuario(${user.id})" class="btn btn-sm btn-danger">Eliminar</button>
-                            </td>
-                        </tr>
-                    `;
-                    tbody.innerHTML += row;
-                });
+                if (!tbody) return; // Si el usuario no es admin, este elemento no existe
+                
+                tbody.innerHTML = '';
+                // Dentro del fetch de usuarios, al construir las filas:
+users.forEach(user => {
+    // 🛡️ Si user.role es null o undefined, usamos 'USER'
+    const safeRole = user.role || 'USER'; 
+    
+    const row = `
+        <tr>
+            <td>${user.id}</td>
+            <td><strong>${user.username}</strong></td>
+            <td>${user.nombreCompleto || 'N/A'}</td>
+            <td>${user.email}</td>
+            <td>
+                <select class="form-select form-select-sm" onchange="cambiarRol(${user.id}, this.value)">
+                    <option value="USER" ${safeRole.includes('USER') ? 'selected' : ''}>USER</option>
+                    <option value="ADMIN" ${safeRole.includes('ADMIN') ? 'selected' : ''}>ADMIN</option>
+                </select>
+            </td>
+            <td>
+                <button onclick="eliminarUsuario(${user.id})" class="btn btn-sm btn-danger">Eliminar</button>
+            </td>
+        </tr>
+    `;
+    tbody.innerHTML += row;
+});
             })
-            .catch(error => mostrarAlerta(error.message, 'danger'));
+            .catch(error => {
+                mostrarAlerta(error.message, 'danger');
+                if (error.message.includes("403")) setTimeout(() => window.location.href = '/recetas/home', 2000);
+            });
         }
 
-        // 3. Cambiar Rol
         function cambiarRol(id, nuevoRol) {
-            const token = localStorage.getItem('token'); // 💡 CORRECCIÓN
+            const token = localStorage.getItem('token');
             fetch(`${BACKEND_URL}/users/${id}/role?newRole=${nuevoRol}`, {
                 method: 'PUT',
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -125,11 +128,9 @@
             .catch(error => mostrarAlerta(error.message, 'danger'));
         }
 
-        // 4. Eliminar Usuario
         function eliminarUsuario(id) {
             if (!confirm("¿Estás seguro de eliminar este usuario?")) return;
-
-            const token = localStorage.getItem('token'); // 💡 CORRECCIÓN
+            const token = localStorage.getItem('token');
             fetch(`${BACKEND_URL}/users/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -137,21 +138,21 @@
             .then(response => {
                 if (response.ok) {
                     mostrarAlerta("Usuario eliminado", 'success');
-                    cargarUsuarios(token); // Recargar la tabla
+                    cargarUsuarios(token);
                 } else throw new Error("Error al eliminar");
             })
             .catch(error => mostrarAlerta(error.message, 'danger'));
         }
 
-        // Funciones de utilidad
         function mostrarAlerta(mensaje, tipo) {
             const alertArea = document.getElementById('alertArea');
-            alertArea.innerHTML = `<div class="alert alert-${tipo} alert-dismissible fade show">${mensaje}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
+            if (alertArea) {
+                alertArea.innerHTML = `<div class="alert alert-${tipo} alert-dismissible fade show">${mensaje}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
+            }
         }
 
         function logout() {
             localStorage.clear();
-            // 💡 CORRECCIÓN 4: Ruta correcta al login
             window.location.href = '/recetas/login';
         }
     </script>

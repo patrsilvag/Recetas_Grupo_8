@@ -52,6 +52,10 @@
             const token = await response.text();
             localStorage.setItem("token", token);
 
+            // 2.  Guardamos en Cookie para que el servidor Java (8002) 
+            // valide la navegación nativamente y nos dé un 200 OK en lugar de 302.
+            document.cookie = `token=${token}; path=/; max-age=3600; SameSite=Lax`;
+
             const urlParams = new URLSearchParams(window.location.search);
             const recetaId = urlParams.get("id");
 

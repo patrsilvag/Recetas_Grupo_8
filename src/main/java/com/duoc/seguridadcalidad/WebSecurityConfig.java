@@ -1,70 +1,47 @@
 package com.duoc.seguridadcalidad;
 
-
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-// import org.springframework.security.core.userdetails.User;
-// import org.springframework.security.core.userdetails.UserDetails;
-// import org.springframework.security.core.userdetails.UserDetailsService;
-// import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
-// import org.springframework.security.crypto.password.PasswordEncoder;
-// import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-// import org.springframework.context.annotation.Description;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter; // 👈
+                                                                                             // NECESARIO
 import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 @EnableWebSecurity
 public class WebSecurityConfig {
 
+    // 🛡️ PASO 1: Inyectar el filtro (El que resolverás con las dependencias de JWT)
+    @Autowired
+    private JWTAuthorizationFilter jwtAuthorizationFilter;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                // 1. Deshabilitar CSRF para que el login por JS funcione
-                .csrf(csrf -> csrf.disable())
-
-                // 2. Configurar cabeceras de seguridad (MIME y CSP)
+        http.csrf(csrf -> csrf.disable())
                 .headers(headers -> headers.contentTypeOptions(withDefaults())
-                        
-                        .contentSecurityPolicy(csp -> csp.policyDirectives(
-                        "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: blob: http://localhost:8081 https:; connect-src 'self' http://localhost:8081;")))
-                // 3. LIBERAR TODAS LAS RUTAS
-                // Permitimos que el HTML cargue. La seguridad real se ejecutará
-                // en el navegador mediante el script que revisa el localStorage.
-                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+                        .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; "
+                                + "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+                                + "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+                                + "img-src 'self' data: blob: http://localhost:8081 https:; "
+                                + "connect-src 'self' http://localhost:8081;")))
+
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/login", "/registro", "/recetas", "/", "/recetas.css",
+                                "/login.css", "/js/**")
+                        .permitAll().requestMatchers("/admin-usuarios").hasRole("ADMIN")
+                        .requestMatchers("/home", "/crear-receta", "/detalle/**").authenticated()
+                        .anyRequest().authenticated())
+
+                // 🛡️ PASO 2: Registrar el filtro nativo
+                // Esto permite que Java valide el token JWT antes de intentar redirigir al login
+                .addFilterBefore(jwtAuthorizationFilter, UsernamePasswordAuthenticationFilter.class)
+
+                .formLogin(login -> login.loginPage("/login").permitAll())
+                .logout(logout -> logout.logoutSuccessUrl("/").permitAll());
 
         return http.build();
     }
-    
-    // @Bean
-    // @Description("In memory Userdetails service registered since DB doesn't have user table ")
-    // public UserDetailsService users() {
-    //     // The builder will ensure the passwords are encoded before saving in memory
-    //     UserDetails user = User.builder()
-    //             .username("user")
-    //             .password(passwordEncoder().encode("password"))
-    //             .roles("USER")
-    //             .build();
-    //     UserDetails admin = User.builder()
-    //             .username("admin")
-    //             .password(passwordEncoder().encode("password"))
-    //             .roles("USER", "ADMIN")
-    //             .build();
-    //     // TERCER USUARIO REQUERIDO POR LA RÚBRICA
-    //     UserDetails chef = User.builder()
-    //             .username("chef")
-    //             .password(passwordEncoder().encode("password"))
-    //             .roles("USER")
-    //             .build();
-    //     return new InMemoryUserDetailsManager(user, admin, chef);
-    // }
-
-    // @Bean
-    // public PasswordEncoder passwordEncoder() {
-    //     return new BCryptPasswordEncoder();
-    // }
-
 }
-

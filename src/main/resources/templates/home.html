@@ -1,45 +1,18 @@
 <!DOCTYPE HTML> 
-<html xmlns:th="http://www.thymeleaf.org"> 
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"> 
 <head>  
     <title>Panel de Control - Recetas</title>  
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /> 
     <link rel="stylesheet" type="text/css" th:href="@{/recetas.css}">
     <script>
-        // Función para decodificar el JWT y ver qué hay adentro
-        function parseJwt(token) {
-            try {
-                const base64Url = token.split('.')[1];
-                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
-                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-                }).join(''));
-                return JSON.parse(jsonPayload);
-            } catch(e) { return {}; }
-        }
-
+        // 🛡️ Lógica simplificada: El JS ya no decide qué mostrar, solo maneja la sesión local
         document.addEventListener("DOMContentLoaded", function() {
             const token = localStorage.getItem('token');
             
-            // 1. Si no hay token, al login
+            // Si no hay token, redirigimos (aunque el servidor ya protege la ruta)
             if (!token) {
                 window.location.replace("/recetas/login");
-                return;
-            }
-
-            // 2. Mostrar opciones generales
-            document.getElementById('admin-panel').style.display = 'block';
-
-            // 3. Magia: Leer el token para saber si es ADMIN
-            const decodedPayload = parseJwt(token);
-            const tokenString = JSON.stringify(decodedPayload).toUpperCase();
-            
-            if (tokenString.includes('ADMIN')) {
-                // Guardamos el rol para que admin-usuarios.html lo sepa
-                localStorage.setItem('role', 'ADMIN');
-                // Mostramos el botón secreto
-                document.getElementById('super-admin-panel').style.display = 'block';
-            } else {
-                localStorage.setItem('role', 'USER');
             }
         });
 
@@ -62,7 +35,9 @@
             <p>Has iniciado sesión correctamente. Ahora puedes gestionar tus contenidos.</p>
         </div>
 
-        <div id="admin-panel" style="display: none; background: #f4f7f6; border-left: 5px solid #27ae60; padding: 20px; margin-top: 30px;">
+        <div id="admin-panel" 
+             sec:authorize="isAuthenticated()" 
+             style="background: #f4f7f6; border-left: 5px solid #27ae60; padding: 20px; margin-top: 30px;">
             <h3 style="color: #2c3e50;">🍳 Gestión de Recetas</h3>
             <p>Como usuario registrado, puedes publicar tus propias creaciones saludables:</p>
             <div style="display: flex; justify-content: center; margin-top: 20px;">
@@ -72,7 +47,9 @@
             </div>
         </div>
 
-        <div id="super-admin-panel" style="display: none; background: #fff3cd; border-left: 5px solid #ffc107; padding: 20px; margin-top: 20px;">
+        <div id="super-admin-panel" 
+             sec:authorize="hasRole('ADMIN')" 
+             style="background: #fff3cd; border-left: 5px solid #ffc107; padding: 20px; margin-top: 20px;">
             <h3 style="color: #856404;">🛡️ Panel de Administración</h3>
             <p>Tienes privilegios de Administrador. Puedes gestionar los usuarios del sistema.</p>
             <div style="display: flex; justify-content: center; margin-top: 20px;">
