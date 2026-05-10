@@ -1,12 +1,17 @@
 package com.duoc.seguridadcalidad;
 
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.ui.ConcurrentModel;
 import org.springframework.ui.Model;
+import jakarta.servlet.FilterChain;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest
 class HomeControllerTest {
@@ -68,5 +73,54 @@ class HomeControllerTest {
         Model model = new ConcurrentModel();
         String viewName = homeController.adminUsuarios(model);
         assertEquals("admin-usuarios", viewName);
+    }
+
+    @Test
+    void testFilterWithoutAuthorizationHeader() { // Sin throws
+       
+        JWTAuthorizationFilter filter =
+                new JWTAuthorizationFilter();
+
+        MockHttpServletRequest request =
+                new MockHttpServletRequest();
+
+        MockHttpServletResponse response =
+                new MockHttpServletResponse();
+
+        FilterChain chain = mock(FilterChain.class);
+
+        assertDoesNotThrow(() ->
+                filter.doFilterInternal(
+                        request,
+                        response,
+                        chain
+                ));
+    }
+
+    @Test
+    void testFilterWithInvalidToken() {
+
+        JWTAuthorizationFilter filter =
+                new JWTAuthorizationFilter();
+
+        MockHttpServletRequest request =
+                new MockHttpServletRequest();
+
+        request.addHeader(
+                "Authorization",
+                "Bearer token_invalido"
+        );
+
+        MockHttpServletResponse response =
+                new MockHttpServletResponse();
+
+        FilterChain chain = mock(FilterChain.class);
+
+        assertDoesNotThrow(() ->
+                filter.doFilterInternal(
+                        request,
+                        response,
+                        chain
+                ));
     }
 }

@@ -4,21 +4,26 @@
     <title>Acceso Seguro - Grupo 8</title>
     <link rel="stylesheet" type="text/css" th:href="@{/login.css}" />
   </head>
+
   <body>
     <div class="login-container">
       <h2>🔒 Autenticación de Auditoría</h2>
+
       <form onsubmit="ejecutarLogin(event)">
         <div>
-          <label
-            >Usuario: <input type="text" id="username" name="username" required
-          /></label>
+          <label>
+            Usuario:
+            <input type="text" id="username" name="username" required />
+          </label>
         </div>
+
         <div>
-          <label
-            >Password:
-            <input type="password" id="password" name="password" required
-          /></label>
+          <label>
+            Password:
+            <input type="password" id="password" name="password" required />
+          </label>
         </div>
+
         <div>
           <input type="submit" value="Sign In" />
         </div>
@@ -27,53 +32,64 @@
 
     <script th:inline="javascript">
       async function ejecutarLogin(event) {
+
         event.preventDefault();
+
         console.log("Iniciando proceso de login...");
 
-        // Usamos localhost para que el navegador de ZAP encuentre el backend
         const backendUrl = "http://localhost:8081";
+
         const userVal = document.getElementById("username").value;
         const passVal = document.getElementById("password").value;
 
-        const params = new URLSearchParams();
-        params.append("user", userVal);
-        params.append("password", passVal);
+        const body = JSON.stringify({
+          username: userVal,
+          password: passVal
+        });
 
         try {
-          // El debugger permite ver la trama en ZAP antes de que se envíe
-          //debugger;
+
           const response = await fetch(`${backendUrl}/login`, {
             method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: params,
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: body
           });
 
           if (response.status === 200) {
+
             const token = await response.text();
+
             localStorage.setItem("token", token);
 
-            // 2.  Guardamos en Cookie para que el servidor Java (8002) 
-            // valide la navegación nativamente y nos dé un 200 OK en lugar de 302.
-            document.cookie = `token=${token}; path=/; max-age=3600; SameSite=Lax`;
+            document.cookie =
+              `token=${token}; path=/; max-age=3600; SameSite=Lax`;
 
             const urlParams = new URLSearchParams(window.location.search);
+
             const recetaId = urlParams.get("id");
 
             console.log("Login exitoso.");
 
-            // LÓGICA INTELIGENTE DE REDIRECCIÓN:
             if (recetaId) {
-              // Si el usuario hizo clic en una receta bloqueada, lo devolvemos ahí
+
               window.location.replace("/recetas/detalle?id=" + recetaId);
+
             } else {
-              // Si el usuario (ej. Admin) entró directo desde el botón "Iniciar Sesión", va al panel
+
               window.location.replace("/recetas/home");
             }
+
           } else {
+
             alert("Credenciales incorrectas en el servidor 8081");
           }
+
         } catch (error) {
+
           console.error("Error de conexión:", error);
+
           alert("No se pudo contactar al backend en el puerto 8081");
         }
       }

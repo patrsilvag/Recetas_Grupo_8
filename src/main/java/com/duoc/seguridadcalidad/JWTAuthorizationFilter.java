@@ -5,55 +5,48 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie; // ✅ Necesario para leer cookies
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.crypto.SecretKey;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
 public class JWTAuthorizationFilter extends OncePerRequestFilter {
 
-    // IMPORTANTE: Esta llave debe ser IDÉNTICA a la del Backend
-    private final String SECRET_KEY = 
-            "ZnJhc2VzbGFyZ2FzcGFyYWNvbG9jYXJjb21vY2xhdmVlbnVucHJvamVjdG9kZWVtZXBsb3BhcmFqd3Rjb25zcHJpbmdzZWN1cml0eQ==bWlwcnVlYmFkZWVqbXBsb3BhcmFiYXNlNjQ=";
+    @Value("${jwt.secret:ZnJhc2Vfbm9fcHJlZGVjaWJsZV9wYXJhX2V2aXRhcl9ibG9ja2VyX2RlX3NvbmFyXzIwMjY=}")
+    private String jwtSecret;
 
-    // Dentro de JWTAuthorizationFilter.java del Frontend
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
 
-        String token = null;
+        // 1. Intentar obtener el token del Header
+        String token = recuperarTokenDeHeader(request);
 
-        // 1. Intentar obtener el token del Header (para llamadas API directas)
-        String header = request.getHeader("Authorization");
-        if (header != null && header.startsWith("Bearer ")) {
-            token = header.replace("Bearer ", "");
+        // 2. Si no hay Header (navegación normal), buscar en Cookies
+        if (token == null) {
+            token = recuperarTokenDeCookie(request);
         }
 
-        // 2. 🍪 CRÍTICO: Intentar obtener el token de la Cookie (para la navegación GET)
-        if (token == null && request.getCookies() != null) {
-            for (var cookie : request.getCookies()) {
-                if ("token".equals(cookie.getName())) {
-                    token = cookie.getValue();
-                    break;
-                }
-            }
-        }
-
-        // 3. Si encontramos un token, lo validamos y cargamos la identidad en Java
+        // 3. Si encontramos un token, validamos y autenticamos
         if (token != null) {
             try {
-                Claims claims = validateToken(token); // Asegúrate de que la SECRET_KEY sea la misma
-                if (claims.get("authorities") != null) {
+                Claims claims = validateToken(token);
+                if (claims.getSubject() != null) {
                     setUpSpringAuthentication(claims);
                 }
             } catch (Exception e) {
-                // Si el token es inválido o expiró, limpiamos y dejamos que Spring Security bloquee
+                // Si el token es inválido o expiró, limpiamos el contexto
                 SecurityContextHolder.clearContext();
             }
         }
@@ -61,38 +54,54 @@ public class JWTAuthorizationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
+    private String recuperarTokenDeHeader(HttpServletRequest request) {
+        String header = request.getHeader("Authorization");
+        if (header != null && header.startsWith("Bearer ")) {
+            return header.replace("Bearer ", "");
+        }
+        return null;
+    }
+
+    private String recuperarTokenDeCookie(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                // ✅ Debe coincidir con el nombre usado en login.html: "token"
+                if ("token".equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        return null;
+    }
+
     private Claims validateToken(String token) {
-        SecretKey key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+        SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
         return Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
     }
 
     private void setUpSpringAuthentication(Claims claims) {
-        Object authoritiesClaim = claims.get("authorities");
-        java.util.List<String> authorities = new java.util.ArrayList<>();
+        List<?> authoritiesClaim = claims.get("authorities", List.class);
+        List<String> roles = new ArrayList<>();
 
-        if (authoritiesClaim instanceof java.util.List<?>) {
-            for (Object obj : (java.util.List<?>) authoritiesClaim) {
-                if (obj instanceof String) {
-                    String role = (String) obj;
-                    // 🛡️ : Asegurar el prefijo ROLE_ para que hasRole('ADMIN') funcione
+        if (authoritiesClaim != null) {
+            for (Object obj : authoritiesClaim) {
+                if (obj instanceof String role) {
                     if (!role.startsWith("ROLE_")) {
                         role = "ROLE_" + role;
                     }
-                    authorities.add(role);
+                    roles.add(role);
                 }
             }
         }
-        if (authorities.isEmpty()) {
-            authorities.add("ROLE_USER");
-        }
 
-        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                claims.getSubject(), null,
-                authorities.stream().map(
-                        org.springframework.security.core.authority.SimpleGrantedAuthority::new)
-                        .collect(java.util.stream.Collectors.toList()));
+        if (roles.isEmpty())
+            roles.add("ROLE_USER");
 
-        org.springframework.security.core.context.SecurityContextHolder.getContext()
-                .setAuthentication(auth);
+        UsernamePasswordAuthenticationToken auth =
+                new UsernamePasswordAuthenticationToken(claims.getSubject(), null,
+                        roles.stream().map(SimpleGrantedAuthority::new).toList());
+
+        SecurityContextHolder.getContext().setAuthentication(auth);
     }
 }
