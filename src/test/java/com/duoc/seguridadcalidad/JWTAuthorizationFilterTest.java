@@ -75,4 +75,36 @@ class JWTAuthorizationFilterTest {
         verify(filterChain).doFilter(request, response);
     }
 
+    @Test
+    void doFilterInternal_TokenEnCookie_AutenticaCorrectamente() throws Exception {
+        // Escenario: No hay Header, pero existe la Cookie "token"
+        String token = generarToken(List.of("USER"));
+        jakarta.servlet.http.Cookie cookieToken = new jakarta.servlet.http.Cookie("token", token);
+
+        when(request.getHeader("Authorization")).thenReturn(null);
+        when(request.getCookies()).thenReturn(new jakarta.servlet.http.Cookie[] {cookieToken});
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        assertNotNull(SecurityContextHolder.getContext().getAuthentication());
+        assertEquals("test_user",
+                SecurityContextHolder.getContext().getAuthentication().getPrincipal());
+        verify(filterChain).doFilter(request, response);
+    }
+
+    @Test
+    void doFilterInternal_CookiesInexistentesOIncorrectas_NoAutentica() throws Exception {
+        // Caso 1: getCookies() retorna null
+        when(request.getHeader("Authorization")).thenReturn(null);
+        when(request.getCookies()).thenReturn(null);
+        filter.doFilterInternal(request, response, filterChain);
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+
+        // Caso 2: Existen cookies pero ninguna se llama "token"
+        jakarta.servlet.http.Cookie otraCookie =
+                new jakarta.servlet.http.Cookie("sessionID", "12345");
+        when(request.getCookies()).thenReturn(new jakarta.servlet.http.Cookie[] {otraCookie});
+        filter.doFilterInternal(request, response, filterChain);
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+    }
 }
